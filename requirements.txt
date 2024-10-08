@@ -1,1 +1,6 @@
 pandas
+matplotlib
+googletrans
+transformers
+numpy
+sentencepiece
