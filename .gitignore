@@ -25,7 +25,6 @@ dist/
 *.ipynb~
 output/
 *.pdf
-*.html
 
 # Ignore data files
 *.csv
@@ -55,3 +54,36 @@ Thumbs.db
 # Ignore Python virtual environment activation scripts
 bin/
 scripts/
+
+# Django-specific ignore patterns
+
+# Ignore Django migrations
+**/migrations/**
+
+# Ignore Django static files (can be regenerated)
+staticfiles/
+static/
+
+# Ignore media files (usually uploaded by users)
+media/
+
+# Ignore local Django settings and secrets
+*.local_settings.py
+.env
+
+# Ignore compiled translation files
+*.mo
+
+# Ignore SQLite database (if you're using it in dev)
+*.sqlite3
+
+# Ignore test coverage results
+htmlcov/
+.coverage
+*.cover
+
+# Ignore pytest cache
+.pytest_cache/
+
+# Ignore Celery beat schedule file
+celerybeat-schedule

@@ -4,3 +4,4 @@ googletrans
 transformers
 numpy
 sentencepiece
+django~=5.1.2
