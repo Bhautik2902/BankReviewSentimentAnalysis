@@ -38,7 +38,11 @@ class VisualiData:
 
         self.positive_reviews = []
         self.negative_reviews = []
-        self.common_services = []
+        self.common_services = []  # list of ServiceModel instance
+
+        self.pos_count = 0
+        self.neg_count = 0
+        self.neu_count = 0
 
 # class ServiceModel:
 #     def __init__(self, name: str, positive: int, negative: int, neutral: int):

@@ -18,11 +18,11 @@ def dashboard_view(request):
     try:
         df = pd.read_excel(file_path)
         visuali_data = analyze_service_sentiment(df, bank_name, service_name, search_query)
+        return render(request, 'BankSense/index.html', {'visuali_data': visuali_data})
 
     except Exception as e:
         print(str(e))
-
-    return render(request, 'BankSense/index.html', {'visuali_data': visuali_data})
+        return render(request, 'BankSense/index.html', {'error': str(e)})
 
 
 def analyze_service_sentiment(df, bank_name, service_name, search_query=None):
@@ -30,22 +30,22 @@ def analyze_service_sentiment(df, bank_name, service_name, search_query=None):
     keywords_to_avoid = ['app', 'interface', 'ui', 'layout', 'design', 'update', 'fingertips', 'bug', 'fingerprint', 'version']
     common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'fee']
 
-    visulidata = VisualiData()
-    visulidata.bank_name = bank_name
+    visualidata = VisualiData()
+    visualidata.bank_name = bank_name
 
-    # assigning top 5 services to visulidata
+    # assigning top 5 services to visualidata
     for service in common_st_services:
         servicemodel = ServiceModel()
         servicemodel.name = service
-        visulidata.common_services.append(servicemodel)
+        visualidata.common_services.append(servicemodel)
 
     # Filter reviews by the given bank name and check for the service name in the review
     bank_reviews = df[df['bank'] == bank_name]
+    visualidata.bank_name = bank_name
+    visualidata.total_reviews = len(bank_reviews)
 
-    visulidata.bank_name = bank_name
-
-    for service in visulidata.common_services:
-        print(service.name)
+    # generating 5 common service related data from filtered dataframe
+    for service in visualidata.common_services:
         for _, row in bank_reviews.iterrows():
             review = row['review_text']
             review = str(review).lower()
@@ -56,16 +56,27 @@ def analyze_service_sentiment(df, bank_name, service_name, search_query=None):
                 # Increment or decrement sentiment_counter based on the sentiment
                 if sentiment == 'positive' and all(keyword not in review for keyword in keywords_to_avoid):
                     service.pos_count += 1
-                    if len(visulidata.positive_reviews) < 5:
-                        visulidata.positive_reviews.append(review)
+
+                    if len(visualidata.positive_reviews) < 5:
+                        visualidata.positive_reviews.append(review)
                 elif sentiment == 'negative' and all(keyword not in review for keyword in keywords_to_avoid):
                     service.neg_count += 1
-                    if len(visulidata.negative_reviews) < 5:
-                        visulidata.negative_reviews.append(review)
+                    if len(visualidata.negative_reviews) < 5:
+                        visualidata.negative_reviews.append(review)
                 elif sentiment == 'neutral' and all(keyword not in review for keyword in keywords_to_avoid):
                     service.neu_count += 1
 
-    return visulidata
+    # generating bank related data
+    for _, row in bank_reviews.iterrows():
+        sentiment = row['review_sentiment']
+        if sentiment == 'positive':
+            visualidata.pos_count += 1
+        elif sentiment == 'negative':
+            visualidata.neg_count += 1
+        elif sentiment == 'neutral':
+            visualidata.neu_count += 1
+
+    return visualidata
 
 
 def store_data_in_db(request):
