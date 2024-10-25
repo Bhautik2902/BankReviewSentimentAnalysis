@@ -3,7 +3,7 @@ import pandas as pd
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
-from .models import Review, VisuliData
+from .models import Review, VisualiData, ServiceModel
 from datetime import datetime
 
 
@@ -11,48 +11,61 @@ from datetime import datetime
 def dashboard_view(request):
     file_path = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'reddit_google_merged_data.xlsx')
 
-    service_name = 'Credit' #request.GET.get('service', None)
-    bank_name = 'RBC' # request.GET.get('bank', None)
-    search_query = '', # request.GET.get('query', None)
+    service_name = request.GET.get('service', None)
+    bank_name = request.GET.get('bank', None)
+    search_query = request.GET.get('query', None)
 
     try:
         df = pd.read_excel(file_path)
-        analyze_service_sentiment(df, bank_name, service_name, search_query)
+        visuali_data = analyze_service_sentiment(df, bank_name, service_name, search_query)
 
     except Exception as e:
         print(str(e))
 
-    return render(request, 'BankSense/index.html')
+    return render(request, 'BankSense/index.html', {'visuali_data': visuali_data})
 
 
 def analyze_service_sentiment(df, bank_name, service_name, search_query=None):
-    # Initialize variables
-    sentiment_counter = 0
-    positive_reviews = []
-    negative_reviews = []
+
     keywords_to_avoid = ['app', 'interface', 'ui', 'layout', 'design', 'update', 'fingertips', 'bug', 'fingerprint', 'version']
+    common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'fee']
+
+    visulidata = VisualiData()
+    visulidata.bank_name = bank_name
+
+    # assigning top 5 services to visulidata
+    for service in common_st_services:
+        servicemodel = ServiceModel()
+        servicemodel.name = service
+        visulidata.common_services.append(servicemodel)
 
     # Filter reviews by the given bank name and check for the service name in the review
-    bank_reviews = df[df['AppName'].str.split('_').str[0] == bank_name]
+    bank_reviews = df[df['bank'] == bank_name]
 
-    for _, row in bank_reviews.iterrows():
-        review = row['Review']
-        review = str(review).lower()
+    visulidata.bank_name = bank_name
 
-        if service_name.lower() in review:
-            sentiment = row['Review sentiment']
+    for service in visulidata.common_services:
+        print(service.name)
+        for _, row in bank_reviews.iterrows():
+            review = row['review_text']
+            review = str(review).lower()
 
-            # Increment or decrement sentiment_counter based on the sentiment
-            if sentiment == 'positive' and all(keyword not in review for keyword in keywords_to_avoid):
-                sentiment_counter += 1
-                if len(positive_reviews) < 5:  # Record max 5 positive reviews
-                    positive_reviews.append(review)
-            elif sentiment == 'negative' and all(keyword not in review for keyword in keywords_to_avoid):
-                sentiment_counter -= 1
-                if len(negative_reviews) < 5:
-                    negative_reviews.append(review)
+            if service.name.lower() in review:
+                sentiment = row['review_sentiment']
 
-    return sentiment_counter, positive_reviews, negative_reviews
+                # Increment or decrement sentiment_counter based on the sentiment
+                if sentiment == 'positive' and all(keyword not in review for keyword in keywords_to_avoid):
+                    service.pos_count += 1
+                    if len(visulidata.positive_reviews) < 5:
+                        visulidata.positive_reviews.append(review)
+                elif sentiment == 'negative' and all(keyword not in review for keyword in keywords_to_avoid):
+                    service.neg_count += 1
+                    if len(visulidata.negative_reviews) < 5:
+                        visulidata.negative_reviews.append(review)
+                elif sentiment == 'neutral' and all(keyword not in review for keyword in keywords_to_avoid):
+                    service.neu_count += 1
+
+    return visulidata
 
 
 def store_data_in_db(request):

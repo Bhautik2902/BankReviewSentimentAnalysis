@@ -20,58 +20,44 @@ class Review(models.Model):
         return f"{self.bank} - {self.source} - {self.review_sentiment}"
 
 
-class VisuliData(models.Model):
-    bank_name = models.CharField(max_length=20)
-    total_reviews = models.IntegerField()
-    avg_rating = models.FloatField()
-    searched_st_service = models.CharField(max_length=50)
-    searched_query = models.TextField()
-
-    common_services = models.JSONField(null=True, blank=True)
-    positive_reviews = models.TextField(null=True, blank=True)
-    negative_reviews = models.TextField(null=True, blank=True)
-
-    def add_instance(self, instance):
-        if not self.common_services:
-            self.instances_list = []
-        self.instances_list.append(instance.to_dict())
-        self.save()
-
-    def get_instances(self):
-        return [ServiceModel.from_dict(item) for item in self.instances_list]
-
-    def get_review_list(self, listtype: int):
-        if self.positive_reviews and listtype == 1:
-            return self.positive_reviews.split(',')
-        elif self.negative_reviews and listtype == 0:
-            return self.negative_reviews.split(',')
-        return []
-
-    def set_positive_services_list(self, positive_reviews):
-        self.services = ','.join(positive_reviews)
-
-    def set_negative_services_list(self, negative_reviews):
-        self.services = ','.join(negative_reviews)
-
-
 class ServiceModel:
-    def __init__(self, name: str, positive: int, negative: int, neutral: int):
-        self.name = name
-        self.positive = positive
-        self.negative = negative
-        self.neutral = neutral
+    def __init__(self):
+        self.name = ""
+        self.pos_count = 0
+        self.neg_count = 0
+        self.neu_count = 0
 
-    def to_dict(self):
-        return {
-            'name': self.name,
-            'positive': self.positive,
-            'negative': self.negative,
-            'neutral': self.neutral
-        }
 
-    @classmethod
-    def from_dict(cls, data):
-        return cls(data['name'], data['positive'], data['negative'], data['neutral'])
+class VisualiData:
+    def __init__(self):
+        self.bank_name = ""
+        self.total_reviews = 0
+        self.avg_rating = 0.0
+        self.searched_st_service = ""
+        self.searched_query = ""
 
-    def __str__(self):
-        return f"Name: {self.name}"
+        self.positive_reviews = []
+        self.negative_reviews = []
+        self.common_services = []
+
+# class ServiceModel:
+#     def __init__(self, name: str, positive: int, negative: int, neutral: int):
+#         self.name = name
+#         self.positive = positive
+#         self.negative = negative
+#         self.neutral = neutral
+#
+#     def to_dict(self):
+#         return {
+#             'name': self.name,
+#             'positive': self.positive,
+#             'negative': self.negative,
+#             'neutral': self.neutral
+#         }
+#
+#     @classmethod
+#     def from_dict(cls, data):
+#         return cls(data['name'], data['positive'], data['negative'], data['neutral'])
+#
+#     def __str__(self):
+#         return f"Name: {self.name}"
