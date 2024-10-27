@@ -1,0 +1,291 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Sentiment Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'BankSense/style.css' %}">
+    <style>
+        /* Custom adjustments */
+        .sidebar {
+            height: 100vh;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            padding-top: 20px;
+        }
+
+        .sidebar .nav-link {
+            font-size: 1.1rem;
+            padding: 15px;
+        }
+
+        .main-content {
+            margin-left: 220px;
+            padding: 20px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .sentiment-score h1 {
+            font-size: 5rem;
+            color: #333;
+        }
+
+        .sentiment-legend span {
+            margin-right: 10px;
+        }
+
+        .card-insights {
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-insights h5 {
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .dropdown-avatar {
+            display: flex;
+            align-items: center;
+        }
+
+        .dropdown-avatar img {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+{# <script>#}
+{#        const sentimentData1 = {{ aggregated_data|safe }}; // Django context data as JavaScript variable#}
+{##}
+{#        console.log(sentimentData1);  // Check the data in the console#}
+{##}
+{#        // You can now use `sentimentData` to populate charts or tables dynamically#}
+{#        // Example: iterating over sentimentData#}
+{#        sentimentData1.forEach(item => {#}
+{#            console.log("Bank:", item.bank);#}
+{#            console.log("Service:", item.p);#}
+{#            console.log("Average Sentiment:", item.avg_sentiment);#}
+{#            // More display logic here#}
+{#        });#}
+{#    </script>#}
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="text-center my-3">
+                <img src="{% static 'images/logo.png' %}" alt="Website Logo" class="img-fluid" style="max-width: 120px;">
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Customer Review</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Settings</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Help</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-start align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <div style="margin-right: 2rem">
+                    <h1 class="h2">Overall Sentiment</h1>
+                    <p class="text-muted">Total Reviews: <span id="totalReviews">{{ totalReviews }}</span></p>
+                </div>
+
+                <div class="d-flex">
+                    <!-- Search bar and dropdown -->
+                    <div class="input-group me-1">
+                        <input type="text" class="form-control" placeholder="Know More About your Bank" style="width: 30rem">
+                        <button type="button" class="btn btn-outline-secondary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            ALL
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">CIBC</a></li>
+                            <li><a class="dropdown-item" href="#">RBC</a></li>
+                            <li><a class="dropdown-item" href="#">Scotia</a></li>
+                            <li><a class="dropdown-item" href="#">TD</a></li>
+                            <li><a class="dropdown-item" href="#">NBC</a></li>
+                        </ul>
+                    </div>
+                    <!-- User profile -->
+                    <div class="dropdown ms-3">
+{#                        <button class="btn btn-outline-secondary dropdown-toggle dropdown-avatar" type="button" data-bs-toggle="dropdown" aria-expanded="false">#}
+{#                            <img src="{% static 'images/avatar.jpg' %}" alt="Avatar" class="avatar">#}
+{#                            Mohit Gohil#}
+{#                        </button>#}
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">Profile</a></li>
+                            <li><a class="dropdown-item" href="#">Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <h5>Banking Sentiment Breakdown: Positive, Neutral, and Negative by Service</h5>
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <h5>Overall Sentiment</h5>
+                    <div class="sentiment-score">
+                        <h1><span id ='sentiment_score'>{{ sentiment_score }}</span></h1>
+                        <canvas id="ratingDonutChart" width="150" height="150"></canvas>
+                    </div>
+                    <p>Total Reviews: <span id="totalReviews2">{{ totalReviews }}</span></p>
+                    <div class="sentiment-legend">
+                        <span class="badge bg-success" id="positive_percentage">Positive {{positivePercentage }}%</span>
+                        <span class="badge bg-warning" id="neutral_percentage">Neutral {{neutralPercentage }}%</span>
+                        <span class="badge bg-danger"  id="negative_percentage">Negative{{ neutralPercentage }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights Section -->
+            <div class="row mt-4">
+                <div class="col-lg-6 card-insights">
+                    <h5>Positive Insights</h5>
+                    <ul>
+                        <li>Customer support has always been responsive and helpful.</li>
+                        <li>Opening an account was fast and simple with clear instructions.</li>
+                        <li>The loan application process was smooth and transparent.</li>
+                    </ul>
+                </div>
+                <div class="col-lg-6 card-insights">
+                    <h5>Negative Insights</h5>
+                    <ul>
+                        <li>The loan processing time was much longer than expected.</li>
+                        <li>Customer service is hard to reach for urgent issues.</li>
+                        <li>The fees on my account were higher than expected..</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const sentimentData = {{ aggregated_data|safe }};  //  context data
+    // Extract topic names and sentiment counts from sentimentData
+    const labels = sentimentData.map(item => item.bank);  // topic names as labels
+    const positiveData = sentimentData.map(item => item.positive_count);
+    const neutralData = sentimentData.map(item => item.neutral_count);
+    const negativeData = sentimentData.map(item => item.negative_count);
+    console.log(" data ",sentimentData)
+
+   const totalPositives = sentimentData.reduce((acc, curr) => acc + curr.positive_count, 0);
+   const totalNeutral = sentimentData.reduce((acc, curr) => acc + curr.neutral_count, 0);
+   const totalNegatives = sentimentData.reduce((acc, curr) => acc + curr.negative_count, 0);
+   const totalReviews = sentimentData.reduce((accumulator, current) => {
+       return accumulator + current.total_reviews;
+
+}, 0);
+   const positivePercentage = ((totalPositives / totalReviews) * 100).toFixed(2);
+        const neutralPercentage = ((totalNeutral / totalReviews) * 100).toFixed(2);
+        const negativePercentage = ((totalNegatives / totalReviews) * 100).toFixed(2);
+
+    var sentimentScore = (
+    (positivePercentage * 10) +
+    (neutralPercentage * 5) +
+    (negativePercentage * 0)
+) / 100;
+    sentimentScore = sentimentScore.toFixed(1)
+   console.log("sentiment score:",sentimentScore)
+    document.getElementById('sentiment_score').innerText = sentimentScore;
+    console.log("Total Counts:", totalPositives, totalNeutral, totalNegatives); // Debugging line
+
+    document.getElementById('totalReviews').innerText = totalReviews;
+    document.getElementById('totalReviews2').innerText = totalReviews;
+    document.getElementById('positive_percentage').innerText=positivePercentage
+    document.getElementById('neutral_percentage').innerText=neutralPercentage
+    document.getElementById('negative_percentage').innerText=negativePercentage
+    console.log("Total Reviews:", totalReviews);
+    // Bar chart example
+    var ctx = document.getElementById('sentimentChart').getContext('2d');
+    var sentimentChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels, //[labels[0].p, 'Service 2', 'Service 3', 'Service 4', 'Service 5'],
+            datasets: [
+                {
+                    label: 'Positive',
+                    backgroundColor: 'green',
+                    data: positiveData//[40, 50, 45, 60, 55]
+                },
+                {
+                    label: 'Neutral',
+                    backgroundColor: 'yellow',
+                    data: neutralData
+                },
+                {
+                    label: 'Negative',
+                    backgroundColor: 'red',
+                    data: negativeData
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { beginAtZero: true },
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Donut chart example
+    var donutCtx = document.getElementById('ratingDonutChart').getContext('2d');
+    var donutChart = new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Positive', 'Neutral', 'Negative'],
+            datasets: [{
+
+                data: [totalPositives, totalNeutral, totalNegatives],
+                {#data: [40, 32, 28],#}
+                backgroundColor: ['green', 'yellow', 'red']
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    })
+</script>
+</body>
+</html>
