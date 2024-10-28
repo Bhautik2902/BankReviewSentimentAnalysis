@@ -8,7 +8,6 @@ class Review(models.Model):
     bank = models.CharField(max_length=100)
     title = models.TextField()
     review_text = models.TextField()
-
     rating = models.FloatField(null=True, blank=True)
     date = models.DateTimeField(null=True, blank=True)
     url = models.URLField(max_length=500, null=True, blank=True)
