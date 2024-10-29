@@ -9,4 +9,5 @@ urlpatterns = [
     path('', views.dashboard_view, name='dashboard'),
     #path('', views.overall_bank_sentiment_dashboard, name='dashboard'),
     path('store_data_in_db', views.store_data_in_db, name='store_data_in_db'),
+    path('test-gcs/', views.test_gcs_access, name='test_gcs_access'),
 ]

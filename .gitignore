@@ -70,6 +70,7 @@ media/
 # Ignore local Django settings and secrets
 *.local_settings.py
 .env
+amplified-brook-416922-6a39d3e05104.json
 
 # Ignore compiled translation files
 *.mo

@@ -1,7 +1,9 @@
-pandas
+pandas~=2.2.2
 matplotlib
 googletrans
 transformers
 numpy
 sentencepiece
 django~=5.1.2
+django-environ
+google-cloud-storage

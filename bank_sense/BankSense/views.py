@@ -1,23 +1,29 @@
 import os
+from datetime import datetime
+
 import pandas as pd
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
 from .models import Review, VisualiData, ServiceModel
-from datetime import datetime
+from django.http import JsonResponse
+import io
+from google.cloud import storage
+from transformers import pipeline
 
 
 # View to list all reviews
 def dashboard_view(request):
-    file_path = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'data.csv')
 
     service_name = request.GET.get('service', None)
     bank_name = request.GET.get('bank', 'CIBC')
     search_query = request.GET.get('query', None)
 
     try:
-        df = pd.read_csv(file_path)
-        visuali_data = analyze_service_sentiment(df, bank_name, service_name, search_query)
+        df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
+
+        visuali_data = analyze_service_sentiment(df, bank_name, service_name)
+
         return render(request, 'BankSense/index.html', {'visuali_data': visuali_data})
 
     except Exception as e:
@@ -25,7 +31,7 @@ def dashboard_view(request):
         return render(request, 'BankSense/index.html', {'error': str(e)})
 
 
-def analyze_service_sentiment(df, bank_name, service_name, search_query=None):
+def analyze_service_sentiment(df, bank_name, service_name=None):
     keywords_to_avoid = ['app', 'interface', 'ui', 'layout', 'design', 'update', 'fingertips', 'bug', 'fingerprint',
                          'version']
     common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'fee']
@@ -51,24 +57,24 @@ def analyze_service_sentiment(df, bank_name, service_name, search_query=None):
             review = str(review).lower()
 
             if service.name.lower() in review:
-                sentiment = row['review_sentiment']
+                sentiment = row['predicted_sentiment']
 
                 # Increment or decrement sentiment_counter based on the sentiment
-                if sentiment == 'positive' and all(keyword not in review for keyword in keywords_to_avoid):
+                if sentiment == 'positive':  #and all(keyword not in review for keyword in keywords_to_avoid):
                     service.pos_count += 1
 
                     if len(visualidata.positive_reviews) < 5:
                         visualidata.positive_reviews.append(review)
-                elif sentiment == 'negative' and all(keyword not in review for keyword in keywords_to_avoid):
+                elif sentiment == 'negative':  #and all(keyword not in review for keyword in keywords_to_avoid):
                     service.neg_count += 1
                     if len(visualidata.negative_reviews) < 5:
                         visualidata.negative_reviews.append(review)
-                elif sentiment == 'neutral' and all(keyword not in review for keyword in keywords_to_avoid):
+                elif sentiment == 'neutral':  #and all(keyword not in review for keyword in keywords_to_avoid):
                     service.neu_count += 1
 
     # generating bank related data
     for _, row in bank_reviews.iterrows():
-        sentiment = row['review_sentiment']
+        sentiment = row['predicted_sentiment']
         if sentiment == 'positive':
             visualidata.pos_count += 1
         elif sentiment == 'negative':
@@ -76,68 +82,91 @@ def analyze_service_sentiment(df, bank_name, service_name, search_query=None):
         elif sentiment == 'neutral':
             visualidata.neu_count += 1
 
-    total_sentiments = visualidata.pos_count + visualidata.neu_count + visualidata.neg_count
-
-    # Calculate the overall rating out of 5
-    if total_sentiments > 0:
-        pos_percent = (visualidata.pos_count / total_sentiments) * 100
-        neu_percent = (visualidata.neu_count / total_sentiments) * 100
-        neg_percent = (visualidata.neg_count / total_sentiments) * 100
-
-        # Formula to calculate rating out of 5
-        overall_rating = (pos_percent * 5 + neu_percent * 3 + neg_percent * 1) / 100
-        visualidata.overall_rating = overall_rating
-    else:
-        visualidata.overall_rating = 0
-
-
     return visualidata
 
 
-
+############################################  utility functions  #######################################################
 
 
 def store_data_in_db(request):
     response = HttpResponse()
-    response.write("Already stored")
+
+    file_path = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'reddit_google_merged_data.xlsx')
+    response.write(file_path)
+
+    try:
+        df = pd.read_excel(file_path)
+    except Exception as e:
+        response.write(str(e))
+
+    for index, row in df.iterrows():
+        # Convert the date field to a Python datetime object if necessary
+        date_str = row['date']
+        if pd.isnull(date_str):
+            date_obj = None
+        else:
+            try:
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d %H:%M')  # Adjust date format if needed
+            except ValueError:
+                date_obj = None  # Handle any unexpected date formats
+
+        # Create and save the review object
+        review = Review(
+            index=row['Index'],
+            source=row['source'],
+            bank=row['bank'],
+            title=row['title'],
+            review_text=str(row['review_text']),  # Convert to string
+            rating=row['rating'] if not pd.isnull(row['rating']) else None,
+            date=date_obj,
+            url=row['url'] if not pd.isnull(row['url']) else None,
+            source_type=row['source_type'] if not pd.isnull(row['source_type']) else None,
+            review_sentiment=row['review_sentiment'],
+            sentiment_score=row['sentiment_score'],
+        )
+        review.save()
+
+    response.write("review stored successfully")
     return response
-#     file_path = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'reddit_google_merged_data.xlsx')
-#     response.write(file_path)
-#
-#     try:
-#         df = pd.read_excel(file_path)
-#     except Exception as e:
-#         response.write(str(e))
-#
-#     for index, row in df.iterrows():
-#         # Convert the date field to a Python datetime object if necessary
-#         date_str = row['date']
-#         if pd.isnull(date_str):
-#             date_obj = None
-#         else:
-#             try:
-#                 date_obj = datetime.strptime(date_str, '%Y-%m-%d %H:%M')  # Adjust date format if needed
-#             except ValueError:
-#                 date_obj = None  # Handle any unexpected date formats
-#
-#         # Create and save the review object
-#         review = Review(
-#             index=row['Index'],
-#             source=row['source'],
-#             bank=row['bank'],
-#             title=row['title'],
-#             review_text=str(row['review_text']),  # Convert to string
-#             rating=row['rating'] if not pd.isnull(row['rating']) else None,
-#             date=date_obj,
-#             url=row['url'] if not pd.isnull(row['url']) else None,
-#             source_type=row['source_type'] if not pd.isnull(row['source_type']) else None,
-#             review_sentiment=row['review_sentiment'],
-#             sentiment_score=row['sentiment_score'],
-#         )
-#         review.save()
-#
-#     response.write("review stored successfully")
-#     return response
+
+
+def read_csv_from_gcs(bucket_name, file_path):
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(file_path)
+    csv_data = blob.download_as_bytes()
+    df = pd.read_csv(io.BytesIO(csv_data))
+    return df
+
+
+def test_gcs_access(request):
+
+    try:
+        # Verify the environment variable is correctly set
+
+        credentials_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
+        if not credentials_path:
+            return JsonResponse({'status': 'error', 'message': 'GOOGLE_APPLICATION_CREDENTIALS not set'}, status=400)
+
+        # Initialize Google Cloud Storage client
+        storage_client = storage.Client()
+
+        # Specify your bucket name
+        bucket_name = 'your-bucket-name'  # Replace with your actual bucket name
+        bucket = storage_client.get_bucket(bucket_name)
+
+        # List all files (blobs) in the bucket and their paths
+        file_paths = [blob.name for blob in bucket.list_blobs()]
+
+        # Construct full GCS paths for each file
+        gcs_file_paths = [f"gs://{bucket_name}/{file_path}" for file_path in file_paths]
+
+        # Return the file paths
+        return JsonResponse({'status': 'success', 'file_paths': gcs_file_paths})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 
 # def overall_bank_sentiment_dashboard(request):
 #     # data plug point (database query here)
