@@ -149,4 +149,4 @@ def overall_bank_sentiment_dashboard(request):
     context = {
         "aggregated_data": aggregated_data_json
     }
-    return render(request, 'BankSense/index_temp.html', context)
+    return render(request, 'BankSense/index.html', context)

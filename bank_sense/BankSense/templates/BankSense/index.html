@@ -99,7 +99,7 @@
             <div class="d-flex justify-content-start align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <div style="margin-right: 2rem">
                     <h1 class="h2">CIBC Bank</h1>
-                    <p class="text-muted">Total Reviews: 15,000</p>
+                    <p class="text-muted">Total Reviews: <span id="totalReviews2">{{ totalReviews }}</span></p>
                 </div>
 
                 <div class="d-flex">
@@ -112,9 +112,10 @@
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            CIBC
+                            ALL
                         </button>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">CIBC</a></li>
                             <li><a class="dropdown-item" href="#">RBC</a></li>
                             <li><a class="dropdown-item" href="#">Scotia</a></li>
                             <li><a class="dropdown-item" href="#">TD</a></li>
@@ -146,14 +147,14 @@
                 <div class="col-lg-4 text-center">
                     <h5>Overall Sentiment</h5>
                     <div class="sentiment-score">
-                        <h1>3.2</h1>
+                        <h1><span id ='sentiment_score'>{{ sentiment_score }}</span></h1>
                         <canvas id="ratingDonutChart" width="150" height="150"></canvas>
                     </div>
-                    <p>Total Reviews: 15,000</p>
+                    <p>Total Reviews: <span id="totalReviews">{{ totalReviews }}</span></p>
                     <div class="sentiment-legend">
-                        <span class="badge bg-success">Positive 40%</span>
-                        <span class="badge bg-warning">Neutral 32%</span>
-                        <span class="badge bg-danger">Negative 28%</span>
+                        <span class="badge bg-success">Positive <span id="positive_percentage">{{positivePercentage }}%</span></span>
+                        <span class="badge bg-warning">Neutral <span id="neutral_percentage">{{neutralPercentage }}%</span></span>
+                        <span class="badge bg-danger">Negative <span id="negative_percentage">{{ negativePercentage }}%</span></span>
                     </div>
                 </div>
             </div>
@@ -186,27 +187,62 @@
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    const sentimentData = {{ aggregated_data|safe }};  //  context data
+    // Extract topic names and sentiment counts from sentimentData
+    const labels = sentimentData.map(item => item.bank);  // topic names as labels
+    const positiveData = sentimentData.map(item => item.positive_count);
+    const neutralData = sentimentData.map(item => item.neutral_count);
+    const negativeData = sentimentData.map(item => item.negative_count);
+    console.log(" data ",sentimentData)
+
+   const totalPositives = sentimentData.reduce((acc, curr) => acc + curr.positive_count, 0);
+   const totalNeutral = sentimentData.reduce((acc, curr) => acc + curr.neutral_count, 0);
+   const totalNegatives = sentimentData.reduce((acc, curr) => acc + curr.negative_count, 0);
+   const totalReviews = sentimentData.reduce((accumulator, current) => {
+       return accumulator + current.total_reviews;
+
+}, 0);
+   const positivePercentage = ((totalPositives / totalReviews) * 100).toFixed(2);
+        const neutralPercentage = ((totalNeutral / totalReviews) * 100).toFixed(2);
+        const negativePercentage = ((totalNegatives / totalReviews) * 100).toFixed(2);
+
+    var sentimentScore = (
+    (positivePercentage * 10) +
+    (neutralPercentage * 5) +
+    (negativePercentage * 0)
+) / 100;
+    sentimentScore = sentimentScore.toFixed(1)
+   console.log("sentiment score:",sentimentScore)
+    document.getElementById('sentiment_score').innerText = sentimentScore;
+    console.log("Total Counts:", totalPositives, totalNeutral, totalNegatives); // Debugging line
+
+    document.getElementById('totalReviews').innerText = totalReviews;
+    document.getElementById('totalReviews2').innerText = totalReviews;
+    document.getElementById('positive_percentage').innerText=positivePercentage
+    document.getElementById('neutral_percentage').innerText=neutralPercentage
+    document.getElementById('negative_percentage').innerText=negativePercentage
+    console.log("Total Reviews:", totalReviews);
     // Bar chart example
     var ctx = document.getElementById('sentimentChart').getContext('2d');
     var sentimentChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Service 1', 'Service 2', 'Service 3', 'Service 4', 'Service 5'],
+            labels: labels, //[labels[0].p, 'Service 2', 'Service 3', 'Service 4', 'Service 5'],
             datasets: [
                 {
                     label: 'Positive',
                     backgroundColor: 'green',
-                    data: [40, 50, 45, 60, 55]
+                    data: positiveData//[40, 50, 45, 60, 55]
                 },
                 {
                     label: 'Neutral',
                     backgroundColor: 'yellow',
-                    data: [20, 30, 25, 20, 35]
+                    data: neutralData
                 },
                 {
                     label: 'Negative',
                     backgroundColor: 'red',
-                    data: [15, 10, 20, 15, 10]
+                    data: negativeData
                 }
             ]
         },
@@ -226,7 +262,9 @@
         data: {
             labels: ['Positive', 'Neutral', 'Negative'],
             datasets: [{
-                data: [40, 32, 28],
+
+                data: [totalPositives, totalNeutral, totalNegatives],
+                {#data: [40, 32, 28],#}
                 backgroundColor: ['green', 'yellow', 'red']
             }]
         },
@@ -235,5 +273,56 @@
         }
     })
 </script>
+
+{#<script>#}
+{#    // Bar chart example#}
+{#    var ctx = document.getElementById('sentimentChart').getContext('2d');#}
+{#    var sentimentChart = new Chart(ctx, {#}
+{#        type: 'bar',#}
+{#        data: {#}
+{#            labels: ['Service 1', 'Service 2', 'Service 3', 'Service 4', 'Service 5'],#}
+{#            datasets: [#}
+{#                {#}
+{#                    label: 'Positive',#}
+{#                    backgroundColor: 'green',#}
+{#                    data: [40, 50, 45, 60, 55]#}
+{#                },#}
+{#                {#}
+{#                    label: 'Neutral',#}
+{#                    backgroundColor: 'yellow',#}
+{#                    data: [20, 30, 25, 20, 35]#}
+{#                },#}
+{#                {#}
+{#                    label: 'Negative',#}
+{#                    backgroundColor: 'red',#}
+{#                    data: [15, 10, 20, 15, 10]#}
+{#                }#}
+{#            ]#}
+{#        },#}
+{#        options: {#}
+{#            responsive: true,#}
+{#            scales: {#}
+{#                x: { beginAtZero: true },#}
+{#                y: { beginAtZero: true }#}
+{#            }#}
+{#        }#}
+{#    });#}
+{##}
+{#    // Donut chart example#}
+{#    var donutCtx = document.getElementById('ratingDonutChart').getContext('2d');#}
+{#    var donutChart = new Chart(donutCtx, {#}
+{#        type: 'doughnut',#}
+{#        data: {#}
+{#            labels: ['Positive', 'Neutral', 'Negative'],#}
+{#            datasets: [{#}
+{#                data: [40, 32, 28],#}
+{#                backgroundColor: ['green', 'yellow', 'red']#}
+{#            }]#}
+{#        },#}
+{#        options: {#}
+{#            responsive: true#}
+{#        }#}
+{#    })#}
+{#</script>#}
 </body>
 </html>
