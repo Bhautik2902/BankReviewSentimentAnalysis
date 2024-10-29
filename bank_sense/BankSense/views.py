@@ -139,32 +139,32 @@ def store_data_in_db(request):
 #     response.write("review stored successfully")
 #     return response
 
-def overall_bank_sentiment_dashboard(request):
-    # data plug point (database query here)
-    data = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'reviews_with_topics.csv')
-
-    # Create DataFrame
-    df = pd.read_csv(data)
-
-    # Aggregate sentiment data by bank and topic_name
-    aggregated_data = (
-        df.groupby(["bank"])
-        .agg(
-            total_reviews=("sentiment_score", "size"),
-            avg_sentiment=("sentiment_score", "mean"),
-            positive_count=("review_sentiment", lambda x: (x == "positive").sum()),
-            neutral_count=("review_sentiment", lambda x: (x == "neutral").sum()),
-            negative_count=("review_sentiment", lambda x: (x == "negative").sum())
-        )
-        .nlargest(5, "total_reviews")
-        .reset_index()
-    )
-
-    # Convert the aggregated data to a dictionary format for the template
-    aggregated_data_json = aggregated_data.to_dict(orient="records")
-
-    # Pass the data as context to the template
-    context = {
-        "aggregated_data": aggregated_data_json
-    }
-    return render(request, 'BankSense/index.html', context)
+# def overall_bank_sentiment_dashboard(request):
+#     # data plug point (database query here)
+#     data = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'reviews_with_topics.csv')
+#
+#     # Create DataFrame
+#     df = pd.read_csv(data)
+#
+#     # Aggregate sentiment data by bank and topic_name
+#     aggregated_data = (
+#         df.groupby(["bank"])
+#         .agg(
+#             total_reviews=("sentiment_score", "size"),
+#             avg_sentiment=("sentiment_score", "mean"),
+#             positive_count=("review_sentiment", lambda x: (x == "positive").sum()),
+#             neutral_count=("review_sentiment", lambda x: (x == "neutral").sum()),
+#             negative_count=("review_sentiment", lambda x: (x == "negative").sum())
+#         )
+#         .nlargest(5, "total_reviews")
+#         .reset_index()
+#     )
+#
+#     # Convert the aggregated data to a dictionary format for the template
+#     aggregated_data_json = aggregated_data.to_dict(orient="records")
+#
+#     # Pass the data as context to the template
+#     context = {
+#         "aggregated_data": aggregated_data_json
+#     }
+#     return render(request, 'BankSense/index.html', context)

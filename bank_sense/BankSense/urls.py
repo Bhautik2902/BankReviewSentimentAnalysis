@@ -6,7 +6,7 @@ app_name = 'BankSense'
 
 urlpatterns = [
     # path('', views.review_list, name='index'),
-    #path('', views.dashboard_view, name='dashboard'),
-    path('', views.overall_bank_sentiment_dashboard, name='dashboard'),
+    path('', views.dashboard_view, name='dashboard'),
+    #path('', views.overall_bank_sentiment_dashboard, name='dashboard'),
     path('store_data_in_db', views.store_data_in_db, name='store_data_in_db'),
 ]
