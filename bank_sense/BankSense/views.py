@@ -9,14 +9,14 @@ from datetime import datetime
 
 # View to list all reviews
 def dashboard_view(request):
-    file_path = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'reddit_google_merged_data.xlsx')
+    file_path = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'data.csv')
 
     service_name = request.GET.get('service', None)
-    bank_name = request.GET.get('bank', None)
+    bank_name = request.GET.get('bank', 'CIBC')
     search_query = request.GET.get('query', None)
 
     try:
-        df = pd.read_excel(file_path)
+        df = pd.read_csv(file_path)
         visuali_data = analyze_service_sentiment(df, bank_name, service_name, search_query)
         return render(request, 'BankSense/index.html', {'visuali_data': visuali_data})
 
@@ -26,8 +26,8 @@ def dashboard_view(request):
 
 
 def analyze_service_sentiment(df, bank_name, service_name, search_query=None):
-
-    keywords_to_avoid = ['app', 'interface', 'ui', 'layout', 'design', 'update', 'fingertips', 'bug', 'fingerprint', 'version']
+    keywords_to_avoid = ['app', 'interface', 'ui', 'layout', 'design', 'update', 'fingertips', 'bug', 'fingerprint',
+                         'version']
     common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'fee']
 
     visualidata = VisualiData()
@@ -76,7 +76,25 @@ def analyze_service_sentiment(df, bank_name, service_name, search_query=None):
         elif sentiment == 'neutral':
             visualidata.neu_count += 1
 
+    total_sentiments = visualidata.pos_count + visualidata.neu_count + visualidata.neg_count
+
+    # Calculate the overall rating out of 5
+    if total_sentiments > 0:
+        pos_percent = (visualidata.pos_count / total_sentiments) * 100
+        neu_percent = (visualidata.neu_count / total_sentiments) * 100
+        neg_percent = (visualidata.neg_count / total_sentiments) * 100
+
+        # Formula to calculate rating out of 5
+        overall_rating = (pos_percent * 5 + neu_percent * 3 + neg_percent * 1) / 100
+        visualidata.overall_rating = overall_rating
+    else:
+        visualidata.overall_rating = 0
+
+
     return visualidata
+
+
+
 
 
 def store_data_in_db(request):
