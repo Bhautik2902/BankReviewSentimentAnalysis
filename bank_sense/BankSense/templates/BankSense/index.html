@@ -136,14 +136,14 @@
                 <div class="col-lg-4 text-center">
                     <h5>Overall Rating</h5>
                     <div class="sentiment-score">
-                        <h1>{{ visuali_data.overall_rating|floatformat:1 }}</h1>
+                        <h1>3.2</h1>
                         <canvas id="ratingDonutChart" width="150" height="150"></canvas>
                     </div>
-                    <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
+                    <p>Total Reviews: 15,000</p>
                     <div class="sentiment-legend">
-                        <span class="badge bg-success">Positive {{ visuali_data.pos_count }}</span>
-                        <span class="badge bg-warning">Neutral {{ visuali_data.neu_count }}</span>
-                        <span class="badge bg-danger">Negative {{ visuali_data.neg_count }}</span>
+                        <span class="badge bg-success">Positive 40%</span>
+                        <span class="badge bg-warning">Neutral 32%</span>
+                        <span class="badge bg-danger">Negative 28%</span>
                     </div>
                 </div>
             </div>
@@ -153,17 +153,17 @@
                 <div class="col-lg-6 card-insights">
                     <h5>Positive Insights</h5>
                     <ul>
-                        {% for review in visuali_data.positive_reviews %}
-                        <li>{{ review }}</li>
-                        {% endfor %}
+                        <li>Customer support has always been responsive and helpful.</li>
+                        <li>Opening an account was fast and simple with clear instructions.</li>
+                        <li>The loan application process was smooth and transparent.</li>
                     </ul>
                 </div>
                 <div class="col-lg-6 card-insights">
                     <h5>Negative Insights</h5>
                     <ul>
-                        {% for review in visuali_data.negative_reviews %}
-                        <li>{{ review }}</li>
-                        {% endfor %}
+                        <li>The loan processing time was much longer than expected.</li>
+                        <li>Customer service is hard to reach for urgent issues.</li>
+                        <li>The fees on my account were higher than expected..</li>
                     </ul>
                 </div>
             </div>
@@ -175,7 +175,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Initialize the sentiment bar chart
