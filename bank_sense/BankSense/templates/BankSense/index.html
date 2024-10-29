@@ -98,8 +98,9 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-start align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <div style="margin-right: 2rem">
-                    <h1 class="h2">CIBC Bank</h1>
-                    <p class="text-muted">Total Reviews: 15,000</p>
+                    <!-- Dynamic bank name and review count -->
+                    <h1 class="h2">{{ visuali_data.bank_name }}</h1>
+                    <p class="text-muted">Total Reviews: {{ visuali_data.total_reviews }}</p>
                 </div>
 
                 <div class="d-flex">
@@ -112,26 +113,15 @@
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            CIBC
+                            {{ visuali_data.bank_name }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">RBC</a></li>
-                            <li><a class="dropdown-item" href="#">Scotia</a></li>
-                            <li><a class="dropdown-item" href="#">TD</a></li>
-                            <li><a class="dropdown-item" href="#">NBC</a></li>
-                        </ul>
-                    </div>
-                    <!-- User profile -->
-                    <div class="dropdown ms-3">
-{#                        <button class="btn btn-outline-secondary dropdown-toggle dropdown-avatar" type="button" data-bs-toggle="dropdown" aria-expanded="false">#}
-{#                            <img src="{% static 'images/avatar.jpg' %}" alt="Avatar" class="avatar">#}
-{#                            Mohit Gohil#}
-{#                        </button>#}
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">Profile</a></li>
-                            <li><a class="dropdown-item" href="#">Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Logout</a></li>
+                            <li><a class="dropdown-item" href="?bank=CIBC">CIBC</a></li>
+                            <li><a class="dropdown-item" href="?bank=RBC">RBC</a></li>
+                            <li><a class="dropdown-item" href="?bank=Scotiabank">Scotiabank</a></li>
+                            <li><a class="dropdown-item" href="?bank=TD">TD</a></li>
+                            <li><a class="dropdown-item" href="?bank=BMO">BMO</a></li>
+                            <li><a class="dropdown-item" href="?bank=NBC">NBC</a></li>
                         </ul>
                     </div>
                 </div>
@@ -144,16 +134,16 @@
                     <canvas id="sentimentChart"></canvas>
                 </div>
                 <div class="col-lg-4 text-center">
-                    <h5>Overall Sentiment</h5>
+                    <h5>Overall Rating</h5>
                     <div class="sentiment-score">
-                        <h1>3.2</h1>
+                        <h1>{{ visuali_data.overall_rating|floatformat:1 }}</h1>
                         <canvas id="ratingDonutChart" width="150" height="150"></canvas>
                     </div>
-                    <p>Total Reviews: 15,000</p>
+                    <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
                     <div class="sentiment-legend">
-                        <span class="badge bg-success">Positive 40%</span>
-                        <span class="badge bg-warning">Neutral 32%</span>
-                        <span class="badge bg-danger">Negative 28%</span>
+                        <span class="badge bg-success">Positive {{ visuali_data.pos_count }}</span>
+                        <span class="badge bg-warning">Neutral {{ visuali_data.neu_count }}</span>
+                        <span class="badge bg-danger">Negative {{ visuali_data.neg_count }}</span>
                     </div>
                 </div>
             </div>
@@ -163,17 +153,17 @@
                 <div class="col-lg-6 card-insights">
                     <h5>Positive Insights</h5>
                     <ul>
-                        <li>Customer support has always been responsive and helpful.</li>
-                        <li>Opening an account was fast and simple with clear instructions.</li>
-                        <li>The loan application process was smooth and transparent.</li>
+                        {% for review in visuali_data.positive_reviews %}
+                        <li>{{ review }}</li>
+                        {% endfor %}
                     </ul>
                 </div>
                 <div class="col-lg-6 card-insights">
                     <h5>Negative Insights</h5>
                     <ul>
-                        <li>The loan processing time was much longer than expected.</li>
-                        <li>Customer service is hard to reach for urgent issues.</li>
-                        <li>The fees on my account were higher than expected..</li>
+                        {% for review in visuali_data.negative_reviews %}
+                        <li>{{ review }}</li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>
@@ -185,55 +175,74 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Bar chart example
-    var ctx = document.getElementById('sentimentChart').getContext('2d');
-    var sentimentChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Service 1', 'Service 2', 'Service 3', 'Service 4', 'Service 5'],
-            datasets: [
-                {
-                    label: 'Positive',
-                    backgroundColor: 'green',
-                    data: [40, 50, 45, 60, 55]
-                },
-                {
-                    label: 'Neutral',
-                    backgroundColor: 'yellow',
-                    data: [20, 30, 25, 20, 35]
-                },
-                {
-                    label: 'Negative',
-                    backgroundColor: 'red',
-                    data: [15, 10, 20, 15, 10]
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: { beginAtZero: true },
-                y: { beginAtZero: true }
-            }
-        }
-    });
 
-    // Donut chart example
-    var donutCtx = document.getElementById('ratingDonutChart').getContext('2d');
-    var donutChart = new Chart(donutCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Positive', 'Neutral', 'Negative'],
-            datasets: [{
-                data: [40, 32, 28],
-                backgroundColor: ['green', 'yellow', 'red']
-            }]
-        },
-        options: {
-            responsive: true
-        }
-    })
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize the sentiment bar chart
+        var sentimentChart = new Chart(document.getElementById('sentimentChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Credit', 'Security', 'Online banking', 'Mortgage', 'Fee'],
+                datasets: [
+                    {
+                        label: 'Positive',
+                        backgroundColor: 'green',
+                        data: [
+                            {{ visuali_data.common_services.0.pos_count }},
+                            {{ visuali_data.common_services.1.pos_count }},
+                            {{ visuali_data.common_services.2.pos_count }},
+                            {{ visuali_data.common_services.3.pos_count }},
+                            {{ visuali_data.common_services.4.pos_count }}
+                        ]
+                    },
+                    {
+                        label: 'Neutral',
+                        backgroundColor: 'yellow',
+                        data: [
+                            {{ visuali_data.common_services.0.neu_count }},
+                            {{ visuali_data.common_services.1.neu_count }},
+                            {{ visuali_data.common_services.2.neu_count }},
+                            {{ visuali_data.common_services.3.neu_count }},
+                            {{ visuali_data.common_services.4.neu_count }}
+                        ]
+                    },
+                    {
+                        label: 'Negative',
+                        backgroundColor: 'red',
+                        data: [
+                            {{ visuali_data.common_services.0.neg_count }},
+                            {{ visuali_data.common_services.1.neg_count }},
+                            {{ visuali_data.common_services.2.neg_count }},
+                            {{ visuali_data.common_services.3.neg_count }},
+                            {{ visuali_data.common_services.4.neg_count }}
+                        ]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Initialize the donut chart
+        var donutChart = new Chart(document.getElementById('ratingDonutChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Positive', 'Neutral', 'Negative'],
+                datasets: [{
+                    data: [{{ visuali_data.pos_count }}, {{ visuali_data.neu_count }}, {{ visuali_data.neg_count }}],
+                    backgroundColor: ['green', 'yellow', 'red']
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    });
 </script>
 </body>
 </html>
