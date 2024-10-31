@@ -17,7 +17,6 @@ def dashboard_view(request):
 
     service_name = request.GET.get('service', None)
     bank_name = request.GET.get('bank', 'CIBC')
-    search_query = request.GET.get('query', None)
 
     try:
         df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
@@ -34,12 +33,15 @@ def dashboard_view(request):
 def analyze_service_sentiment(df, bank_name, service_name=None):
     keywords_to_avoid = ['app', 'interface', 'ui', 'layout', 'design', 'update', 'fingertips', 'bug', 'fingerprint',
                          'version']
-    common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'fee']
+    common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'Fee']
+    if service_name is not None:
+        common_st_services.insert(0, service_name.replace('-', ' '))  # add selected service at front
+        common_st_services.pop() # remove last one.
 
     visualidata = VisualiData()
     visualidata.bank_name = bank_name
 
-    # assigning top 5 services to visualidata
+    # assigning top 5 services and 1 selected service (if selected)
     for service in common_st_services:
         servicemodel = ServiceModel()
         servicemodel.name = service

@@ -1,4 +1,5 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,6 +65,34 @@
         .dropdown-avatar img {
             margin-right: 10px;
         }
+
+        .chip {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            color: #1565C0; /* Text color */
+            background-color: #E3F2FD; /* Light blue background */
+            border-radius: 20px; /* Rounded corners */
+            border: 1px solid transparent;
+            text-align: center;
+            cursor: pointer;
+            margin: .2rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .chip:hover {
+            background-color: #BBDEFB; /* Slightly darker background on hover */
+            border-color: #90CAF9; /* Slight border change on hover */
+        }
+
+        .chip:active {
+            background-color: #1565C0; /* Darker background when clicked */
+            color: white; /* White text when clicked */
+        }
+
+        .custom-modal-width {
+            max-width: 60%; /* Change this value to adjust the width */
+        }
     </style>
 </head>
 <body>
@@ -106,9 +135,8 @@
                 <div class="d-flex">
                     <!-- Search bar and dropdown -->
                     <div class="input-group me-1">
-                        <input type="text" class="form-control" placeholder="Know More About your Bank" style="width: 30rem">
-                        <button type="button" class="btn btn-outline-secondary">
-                            <i class="fas fa-search"></i>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#browseServicesModal">
+                            Browse bank services
                         </button>
                     </div>
                     <div class="dropdown">
@@ -169,12 +197,25 @@
             </div>
         </main>
     </div>
-</div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Banking Services Modal -->
+    <div class="modal fade" id="browseServicesModal" tabindex="-1" aria-labelledby="browseServicesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable custom-modal-width">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="browseServicesLabel">Browse more banking services</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control mb-3" id="searchInput" placeholder="Search for label">
+                    <div id="chipContainer">
+                        <!-- chips will be added dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -182,28 +223,28 @@
         var sentimentChart = new Chart(document.getElementById('sentimentChart').getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['Credit', 'Security', 'Online banking', 'Mortgage', 'Fee'],
+                labels: [
+                    {% for service in visuali_data.common_services %}
+                        "{{ service.name }}"{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
                 datasets: [
                     {
                         label: 'Positive',
                         backgroundColor: 'green',
                         data: [
-                            {{ visuali_data.common_services.0.pos_count }},
-                            {{ visuali_data.common_services.1.pos_count }},
-                            {{ visuali_data.common_services.2.pos_count }},
-                            {{ visuali_data.common_services.3.pos_count }},
-                            {{ visuali_data.common_services.4.pos_count }}
+                            {% for service in visuali_data.common_services %}
+                                {{ service.pos_count }}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
                         ]
                     },
                     {
                         label: 'Neutral',
                         backgroundColor: 'yellow',
                         data: [
-                            {{ visuali_data.common_services.0.neu_count }},
-                            {{ visuali_data.common_services.1.neu_count }},
-                            {{ visuali_data.common_services.2.neu_count }},
-                            {{ visuali_data.common_services.3.neu_count }},
-                            {{ visuali_data.common_services.4.neu_count }}
+                           {% for service in visuali_data.common_services %}
+                                {{ service.neg_count }}{% if not forloop.last %},{% endif %}
+                           {% endfor %}
                         ]
                     },
                     {
@@ -242,7 +283,64 @@
                 responsive: true
             }
         });
+
+        // Example dynamic chip data
+        const services = [
+            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
+            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
+            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
+            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
+            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
+            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
+            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
+            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
+            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
+            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
+            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
+            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange'
+        ];
+
+        const chipContainer = document.getElementById('chipContainer');
+
+        // Populate modal with chips
+        services.forEach(service => {
+            const chip = document.createElement('div');
+            chip.className = 'chip';
+
+            // Create the anchor tag
+            const link = document.createElement('a');
+            link.href = `?service=${encodeURIComponent(service.replace(/\s+/g, '-'))}`;
+            link.textContent = service;
+            link.style.textDecoration = 'none';
+            link.style.color = 'inherit';
+
+            // Append the anchor to the chip div
+            chip.appendChild(link);
+
+            // Append the chip to the container
+            chipContainer.appendChild(chip);
+        });
+
+        // Filter chips based on search input
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', function() {
+            const filter = searchInput.value.toLowerCase();
+            const chips = document.querySelectorAll('.chip');
+            chips.forEach(chip => {
+                if (chip.textContent.toLowerCase().includes(filter)) {
+                    chip.style.display = 'inline-block';
+                } else {
+                    chip.style.display = 'none';
+                }
+            });
+        });
     });
+
+
 </script>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
