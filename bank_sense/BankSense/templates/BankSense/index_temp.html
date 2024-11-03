@@ -115,11 +115,12 @@
                             ALL
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">CIBC</a></li>
-                            <li><a class="dropdown-item" href="#">RBC</a></li>
-                            <li><a class="dropdown-item" href="#">Scotia</a></li>
-                            <li><a class="dropdown-item" href="#">TD</a></li>
-                            <li><a class="dropdown-item" href="#">NBC</a></li>
+                            <li><a class="dropdown-item" href="/?bank=CIBC">CIBC</a></li>
+                            <li><a class="dropdown-item" href="/?bank=RBC">RBC</a></li>
+                            <li><a class="dropdown-item" href="/?bank=Scotiabank">Scotiabank</a></li>
+                            <li><a class="dropdown-item" href="/?bank=TD">TD</a></li>
+                            <li><a class="dropdown-item" href="/?bank=BMO">BMO</a></li>
+                            <li><a class="dropdown-item" href="/?bank=NBC">NBC</a></li>
                         </ul>
                     </div>
                     <!-- User profile -->
@@ -158,19 +159,18 @@
             <!-- Insights Section -->
             <div class="row mt-4">
                 <div class="col-lg-6 card-insights">
+
                     <h5>Positive Insights</h5>
                     <ul>
-                        <li>Customer support has always been responsive and helpful.</li>
-                        <li>Opening an account was fast and simple with clear instructions.</li>
-                        <li>The loan application process was smooth and transparent.</li>
+                        {% if  top_positive_reviews %}
+                            <li> {{ top_positive_reviews }}</li>
+                        {% endif %}
                     </ul>
                 </div>
                 <div class="col-lg-6 card-insights">
                     <h5>Negative Insights</h5>
                     <ul>
-                        <li>The loan processing time was much longer than expected.</li>
-                        <li>Customer service is hard to reach for urgent issues.</li>
-                        <li>The fees on my account were higher than expected..</li>
+                        <li>{{ top_negative_reviews }}</li>
                     </ul>
                 </div>
             </div>
