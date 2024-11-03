@@ -1,5 +1,4 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,34 +64,6 @@
         .dropdown-avatar img {
             margin-right: 10px;
         }
-
-        .chip {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-            color: #1565C0; /* Text color */
-            background-color: #E3F2FD; /* Light blue background */
-            border-radius: 20px; /* Rounded corners */
-            border: 1px solid transparent;
-            text-align: center;
-            cursor: pointer;
-            margin: .2rem;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .chip:hover {
-            background-color: #BBDEFB; /* Slightly darker background on hover */
-            border-color: #90CAF9; /* Slight border change on hover */
-        }
-
-        .chip:active {
-            background-color: #1565C0; /* Darker background when clicked */
-            color: white; /* White text when clicked */
-        }
-
-        .custom-modal-width {
-            max-width: 60%; /* Change this value to adjust the width */
-        }
     </style>
 </head>
 <body>
@@ -128,22 +99,26 @@
             <div class="d-flex justify-content-start align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <div style="margin-right: 2rem">
                     <!-- Dynamic bank name and review count -->
-                    <h1 class="h2">{{ visuali_data.bank_name }}</h1>
-                    <p class="text-muted">Total Reviews: {{ visuali_data.total_reviews }}</p>
+
+                      <h1 class="h2">{{ visuali_data.bank_name }}</h1>
+                      <p class="text-muted">Total Reviews: {{ visuali_data.total_reviews }}</p>
+
                 </div>
 
                 <div class="d-flex">
                     <!-- Search bar and dropdown -->
                     <div class="input-group me-1">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#browseServicesModal">
-                            Browse bank services
+                        <input type="text" class="form-control" placeholder="Know More About your Bank" style="width: 30rem">
+                        <button type="button" class="btn btn-outline-secondary">
+                            <i class="fas fa-search"></i>
                         </button>
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            {{ visuali_data.bank_name }}
+                                {{ visuali_data.bank_name }}
                         </button>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="overview">ALL</a></li>
                             <li><a class="dropdown-item" href="?bank=CIBC">CIBC</a></li>
                             <li><a class="dropdown-item" href="?bank=RBC">RBC</a></li>
                             <li><a class="dropdown-item" href="?bank=Scotiabank">Scotiabank</a></li>
@@ -167,12 +142,12 @@
                         <h1>{{ visuali_data.overall_rating|floatformat:1 }}</h1>
                         <canvas id="ratingDonutChart" width="150" height="150"></canvas>
                     </div>
-                    <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
-                    <div class="sentiment-legend">
-                        <span class="badge bg-success">Positive {{ visuali_data.pos_count }}</span>
-                        <span class="badge bg-warning">Neutral {{ visuali_data.neu_count }}</span>
-                        <span class="badge bg-danger">Negative {{ visuali_data.neg_count }}</span>
-                    </div>
+                        <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
+                        <div class="sentiment-legend">
+                            <span class="badge bg-success">Positive {{ visuali_data.pos_count }}</span>
+                            <span class="badge bg-warning">Neutral {{ visuali_data.neu_count }}</span>
+                            <span class="badge bg-danger">Negative {{ visuali_data.neg_count }}</span>
+                        </div>
                 </div>
             </div>
 
@@ -197,54 +172,129 @@
             </div>
         </main>
     </div>
-
-    <!-- Banking Services Modal -->
-    <div class="modal fade" id="browseServicesModal" tabindex="-1" aria-labelledby="browseServicesLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-scrollable custom-modal-width">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="browseServicesLabel">Browse more banking services</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" class="form-control mb-3" id="searchInput" placeholder="Search for label">
-                    <div id="chipContainer">
-                        <!-- chips will be added dynamically -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{#<script>#}
+{#    const sentimentData = {{ aggregated_data|safe }};  //  context data#}
+{#    // Extract topic names and sentiment counts from sentimentData#}
+{#    const labels = sentimentData.map(item => item.bank);  // topic names as labels#}
+{#    const positiveData = sentimentData.map(item => item.positive_count);#}
+{#    const neutralData = sentimentData.map(item => item.neutral_count);#}
+{#    const negativeData = sentimentData.map(item => item.negative_count);#}
+{#    console.log(" data ",sentimentData)#}
+{##}
+{#   const totalPositives = sentimentData.reduce((acc, curr) => acc + curr.positive_count, 0);#}
+{#   const totalNeutral = sentimentData.reduce((acc, curr) => acc + curr.neutral_count, 0);#}
+{#   const totalNegatives = sentimentData.reduce((acc, curr) => acc + curr.negative_count, 0);#}
+{#   const totalReviews = sentimentData.reduce((accumulator, current) => {#}
+{#       return accumulator + current.total_reviews;#}
+{##}
+
+{#   const positivePercentage = ((totalPositives / totalReviews) * 100).toFixed(2);#}
+{#        const neutralPercentage = ((totalNeutral / totalReviews) * 100).toFixed(2);#}
+{#        const negativePercentage = ((totalNegatives / totalReviews) * 100).toFixed(2);#}
+{##}
+{#    var sentimentScore = (#}
+{#    (positivePercentage * 10) +#}
+{#    (neutralPercentage * 5) +#}
+{#    (negativePercentage * 0)#}
+{#) / 100;#}
+{#    sentimentScore = sentimentScore.toFixed(1)#}
+{#   console.log("sentiment score:",sentimentScore)#}
+{#    document.getElementById('sentiment_score').innerText = sentimentScore;#}
+{#    console.log("Total Counts:", totalPositives, totalNeutral, totalNegatives); // Debugging line#}
+{##}
+{#    document.getElementById('totalReviews').innerText = totalReviews;#}
+{#    document.getElementById('totalReviews2').innerText = totalReviews;#}
+{#    document.getElementById('positive_percentage').innerText=positivePercentage#}
+{#    document.getElementById('neutral_percentage').innerText=neutralPercentage#}
+{#    document.getElementById('negative_percentage').innerText=negativePercentage#}
+{#    console.log("Total Reviews:", totalReviews);#}
+{#    // Bar chart example#}
+{#    var ctx = document.getElementById('sentimentChart').getContext('2d');#}
+{#    var sentimentChart = new Chart(ctx, {#}
+{#        type: 'bar',#}
+{#        data: {#}
+{#            labels: labels, //[labels[0].p, 'Service 2', 'Service 3', 'Service 4', 'Service 5'],#}
+{#            datasets: [#}
+{#                {#}
+{#                    label: 'Positive',#}
+{#                    backgroundColor: 'green',#}
+{#                    data: positiveData//[40, 50, 45, 60, 55]#}
+{#                },#}
+{#                {#}
+{#                    label: 'Neutral',#}
+{#                    backgroundColor: 'yellow',#}
+{#                    data: neutralData#}
+{#                },#}
+{#                {#}
+{#                    label: 'Negative',#}
+{#                    backgroundColor: 'red',#}
+{#                    data: negativeData#}
+{#                }#}
+{#            ]#}
+{#        },#}
+{#        options: {#}
+{#            responsive: true,#}
+{#            scales: {#}
+{#                x: { beginAtZero: true },#}
+{#                y: { beginAtZero: true }#}
+{#            }#}
+{#        }#}
+{#    });#}
+{##}
+{#    // Donut chart example#}
+{#    var donutCtx = document.getElementById('ratingDonutChart').getContext('2d');#}
+{#    var donutChart = new Chart(donutCtx, {#}
+{#        type: 'doughnut',#}
+{#        data: {#}
+{#            labels: ['Positive', 'Neutral', 'Negative'],#}
+{#            datasets: [{#}
+{##}
+{#                data: [totalPositives, totalNeutral, totalNegatives],#}
+                {#data: [40, 32, 28],#}
+{#                backgroundColor: ['green', 'yellow', 'red']#}
+{#            }]#}
+{#        },#}
+{#        options: {#}
+{#            responsive: true#}
+{#        }#}
+{#    })#}
+{#</script>#}
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Initialize the sentiment bar chart
+        {#console.log(visuali_data)#}
         var sentimentChart = new Chart(document.getElementById('sentimentChart').getContext('2d'), {
             type: 'bar',
             data: {
-                labels: [
-                    {% for service in visuali_data.common_services %}
-                        "{{ service.name }}"{% if not forloop.last %},{% endif %}
-                    {% endfor %}
-                ],
+                labels: ['Credit', 'Security', 'Online banking', 'Mortgage', 'Fee'],
                 datasets: [
                     {
                         label: 'Positive',
                         backgroundColor: 'green',
                         data: [
-                            {% for service in visuali_data.common_services %}
-                                {{ service.pos_count }}{% if not forloop.last %},{% endif %}
-                            {% endfor %}
+                            {{ visuali_data.common_services.0.pos_count }},
+                            {{ visuali_data.common_services.1.pos_count }},
+                            {{ visuali_data.common_services.2.pos_count }},
+                            {{ visuali_data.common_services.3.pos_count }},
+                            {{ visuali_data.common_services.4.pos_count }}
                         ]
                     },
                     {
                         label: 'Neutral',
                         backgroundColor: 'yellow',
                         data: [
-                           {% for service in visuali_data.common_services %}
-                                {{ service.neg_count }}{% if not forloop.last %},{% endif %}
-                           {% endfor %}
+                            {{ visuali_data.common_services.0.neu_count }},
+                            {{ visuali_data.common_services.1.neu_count }},
+                            {{ visuali_data.common_services.2.neu_count }},
+                            {{ visuali_data.common_services.3.neu_count }},
+                            {{ visuali_data.common_services.4.neu_count }}
                         ]
                     },
                     {
@@ -283,64 +333,7 @@
                 responsive: true
             }
         });
-
-        // Example dynamic chip data
-        const services = [
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange'
-        ];
-
-        const chipContainer = document.getElementById('chipContainer');
-
-        // Populate modal with chips
-        services.forEach(service => {
-            const chip = document.createElement('div');
-            chip.className = 'chip';
-
-            // Create the anchor tag
-            const link = document.createElement('a');
-            link.href = `?service=${encodeURIComponent(service.replace(/\s+/g, '-'))}`;
-            link.textContent = service;
-            link.style.textDecoration = 'none';
-            link.style.color = 'inherit';
-
-            // Append the anchor to the chip div
-            chip.appendChild(link);
-
-            // Append the chip to the container
-            chipContainer.appendChild(chip);
-        });
-
-        // Filter chips based on search input
-        const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', function() {
-            const filter = searchInput.value.toLowerCase();
-            const chips = document.querySelectorAll('.chip');
-            chips.forEach(chip => {
-                if (chip.textContent.toLowerCase().includes(filter)) {
-                    chip.style.display = 'inline-block';
-                } else {
-                    chip.style.display = 'none';
-                }
-            });
-        });
     });
-
-
 </script>
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
