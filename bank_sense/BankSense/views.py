@@ -20,10 +20,11 @@ def dashboard_view(request):
 
     try:
         df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
+        service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
 
         visuali_data = analyze_service_sentiment(df, bank_name, service_name)
-
-        return render(request, 'BankSense/index.html', {'visuali_data': visuali_data})
+        service_list.remove('Keyword')
+        return render(request, 'BankSense/index.html', {'visuali_data': visuali_data, 'service_list': service_list})
 
     except Exception as e:
         print(str(e))
@@ -139,6 +140,19 @@ def read_csv_from_gcs(bucket_name, file_path):
     csv_data = blob.download_as_bytes()
     df = pd.read_csv(io.BytesIO(csv_data))
     return df
+
+def read_services_from_gcs(bucket_name, file_path):
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(file_path)
+    csv_data = blob.download_as_bytes()
+    df = pd.read_csv(io.BytesIO(csv_data), header=None)
+
+    keywords_list = []
+    for _, row in df.iterrows():
+        keywords_list.append(row[0])
+
+    return keywords_list
 
 
 def test_gcs_access(request):

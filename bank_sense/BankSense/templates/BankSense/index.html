@@ -286,18 +286,9 @@
 
         // Example dynamic chip data
         const services = [
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange',
-            'Credit cards', 'Loans', 'Mortgages', 'Online banking', 'Checking accounts',
-            'Savings accounts', 'Investments', 'Insurance', 'Mobile payments', 'Foreign exchange'
+            {% for service in service_list %}
+                "{{ service }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
         ];
 
         const chipContainer = document.getElementById('chipContainer');
@@ -309,7 +300,8 @@
 
             // Create the anchor tag
             const link = document.createElement('a');
-            link.href = `?service=${encodeURIComponent(service.replace(/\s+/g, '-'))}`;
+            link.href = `?service=${encodeURIComponent(service.replace(/\s+/g, '-'))}&bank={{ visuali_data.bank_name }}`;
+
             link.textContent = service;
             link.style.textDecoration = 'none';
             link.style.color = 'inherit';
