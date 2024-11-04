@@ -30,6 +30,46 @@ def dashboard_view(request):
         print(str(e))
         return render(request, 'BankSense/index.html', {'error': str(e)})
 
+def analyze_service_sentiment(df, bank_name="ALL"):
+    visuali_data = VisualiData()
+
+    # Filter by bank name if provided
+    if bank_name != "ALL":
+        df = df[df["bank"] == bank_name]
+
+    # Aggregate data for analysis
+    aggregated_data = (
+        df.groupby(["bank"])
+        .agg(
+            total_reviews=("sentiment_score", "size"),
+            avg_sentiment=("sentiment_score", "mean"),
+            positive_count=("predicted_sentiment", lambda x: (x == "positive").sum()),
+            neutral_count=("predicted_sentiment", lambda x: (x == "neutral").sum()),
+            negative_count=("predicted_sentiment", lambda x: (x == "negative").sum())
+        )
+        .nlargest(5, "total_reviews")
+        .reset_index()
+    )
+
+    # Populate VisualiData instance
+    for _, row in aggregated_data.iterrows():
+        if bank_name == "ALL" or row["bank"] == bank_name:
+            visuali_data.bank_name = row["bank"]
+            visuali_data.total_reviews = row["total_reviews"]
+            visuali_data.avg_rating = row["avg_sentiment"]
+            visuali_data.pos_count = row["positive_count"]
+            visuali_data.neu_count = row["neutral_count"]
+            visuali_data.neg_count = row["negative_count"]
+
+            # Optionally populate positive and negative reviews, if available in df
+            visuali_data.positive_reviews = df[(df["bank"] == row["bank"]) & (df["predicted_sentiment"] == "positive")]["review_text"].tolist()
+            visuali_data.negative_reviews = df[(df["bank"] == row["bank"]) & (df["predicted_sentiment"] == "negative")]["review_text"].tolist()
+
+            # Assuming `common_services` would be populated by additional logic or ServiceModel instances
+            # For now, it's left as an empty list in the VisualiData instance
+    print("this is visuali_data"+str(visuali_data))
+    return visuali_data
+
 
 def analyze_service_sentiment(df, bank_name, service_name=None):
     keywords_to_avoid = ['app', 'interface', 'ui', 'layout', 'design', 'update', 'fingertips', 'bug', 'fingerprint',
@@ -183,33 +223,45 @@ def test_gcs_access(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+def overall_bank_sentiment_dashboard(request):
+    df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
+    # Step 1: Map sentiment strings to numerical values
+    df["sentiment_score"] = df["predicted_sentiment"].map({"positive": 1, "neutral": 0, "negative": -1})
 
-# def overall_bank_sentiment_dashboard(request):
-#     # data plug point (database query here)
-#     data = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'reviews_with_topics.csv')
-#
-#     # Create DataFrame
-#     df = pd.read_csv(data)
-#
-#     # Aggregate sentiment data by bank and topic_name
-#     aggregated_data = (
-#         df.groupby(["bank"])
-#         .agg(
-#             total_reviews=("sentiment_score", "size"),
-#             avg_sentiment=("sentiment_score", "mean"),
-#             positive_count=("review_sentiment", lambda x: (x == "positive").sum()),
-#             neutral_count=("review_sentiment", lambda x: (x == "neutral").sum()),
-#             negative_count=("review_sentiment", lambda x: (x == "negative").sum())
-#         )
-#         .nlargest(5, "total_reviews")
-#         .reset_index()
-#     )
-#
-#     # Convert the aggregated data to a dictionary format for the template
-#     aggregated_data_json = aggregated_data.to_dict(orient="records")
-#
-#     # Pass the data as context to the template
-#     context = {
-#         "aggregated_data": aggregated_data_json
-#     }
-#     return render(request, 'BankSense/index.html', context)
+    aggregated_data = (
+        df.groupby(["bank"])
+        .agg(
+            total_reviews=("sentiment_score", "size"),
+            avg_sentiment=("sentiment_score", "mean"),
+            positive_count=("predicted_sentiment", lambda x: (x == "positive").sum()),
+            neutral_count=("predicted_sentiment", lambda x: (x == "neutral").sum()),
+            negative_count=("predicted_sentiment", lambda x: (x == "negative").sum())
+        )
+        .nlargest(5, "total_reviews")
+        .reset_index()
+    )
+
+    top_positive_reviews = (
+        df[df["predicted_sentiment"] == "positive"]
+        .sort_values(by="rating", ascending=False)
+        .head(3)  # Adjust as needed for more or fewer reviews
+    )
+    top_negative_reviews = (
+        df[df["predicted_sentiment"] == "negative"]
+        .sort_values(by="rating", ascending=True)
+        .head(3)  # Adjust as needed for more or fewer reviews
+    )
+    top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
+    top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
+
+
+    # Convert the aggregated data to a dictionary format for the template
+    aggregated_data_json = aggregated_data.to_dict(orient="records")
+
+    # Pass the data as context to the template
+    context = {
+        "aggregated_data": aggregated_data_json,
+        "top_positive_reviews": top_positive_reviews_text,
+        "top_negative_reviews": top_negative_reviews_text,
+    }
+    return render(request, 'BankSense/index_temp.html', context)

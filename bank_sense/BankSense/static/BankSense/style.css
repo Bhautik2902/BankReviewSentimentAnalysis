@@ -63,3 +63,84 @@ body {
 .d-flex .input-group button {
     flex-grow: 0;
 }
+
+/* Custom adjustments */
+.sidebar {
+            height: 100vh;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            padding-top: 20px;
+        }
+
+        .sidebar .nav-link {
+            font-size: 1.1rem;
+            padding: 15px;
+        }
+
+        .main-content {
+            margin-left: 220px;
+            padding: 20px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .sentiment-score h1 {
+            font-size: 5rem;
+            color: #333;
+        }
+
+        .sentiment-legend span {
+            margin-right: 10px;
+        }
+
+        .card-insights {
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-insights h5 {
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .dropdown-avatar {
+            display: flex;
+            align-items: center;
+        }
+
+        .dropdown-avatar img {
+            margin-right: 10px;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            color: #1565C0; /* Text color */
+            background-color: #E3F2FD; /* Light blue background */
+            border-radius: 20px; /* Rounded corners */
+            border: 1px solid transparent;
+            text-align: center;
+            cursor: pointer;
+            margin: .2rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .chip:hover {
+            background-color: #BBDEFB; /* Slightly darker background on hover */
+            border-color: #90CAF9; /* Slight border change on hover */
+        }
+
+        .chip:active {
+            background-color: #1565C0; /* Darker background when clicked */
+            color: white; /* White text when clicked */
+        }
+
+        .custom-modal-width {
+            max-width: 60%; /* Change this value to adjust the width */
+        }
