@@ -257,11 +257,19 @@ def overall_bank_sentiment_dashboard(request):
 
     # Convert the aggregated data to a dictionary format for the template
     aggregated_data_json = aggregated_data.to_dict(orient="records")
+    service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
+
+    # get all bank names
+    service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
+    service_list.remove('Keyword')
+    #return render(request, 'BankSense/index.html', {'visuali_data': visuali_data, 'service_list': service_list})
+
 
     # Pass the data as context to the template
     context = {
         "aggregated_data": aggregated_data_json,
         "top_positive_reviews": top_positive_reviews_text,
         "top_negative_reviews": top_negative_reviews_text,
+        "service_list": service_list,
     }
     return render(request, 'BankSense/index_temp.html', context)
