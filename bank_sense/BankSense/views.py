@@ -1,10 +1,20 @@
+import base64
+import re
 import os
 from datetime import datetime
+from collections import Counter
+from wordcloud import WordCloud
+import base64
+from io import BytesIO
+import matplotlib.pyplot as plt
 
 import pandas as pd
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
+from matplotlib import pyplot as plt
+from wordcloud import WordCloud
+
 from .models import Review, VisualiData, ServiceModel
 from django.http import JsonResponse
 import io
@@ -14,7 +24,6 @@ from transformers import pipeline
 
 # View to list all reviews
 def dashboard_view(request):
-
     service_name = request.GET.get('service', None)
     bank_name = request.GET.get('bank', 'CIBC')
 
@@ -24,11 +33,56 @@ def dashboard_view(request):
 
         visuali_data = analyze_service_sentiment(df, bank_name, service_name)
         service_list.remove('Keyword')
-        return render(request, 'BankSense/index.html', {'visuali_data': visuali_data, 'service_list': service_list})
+
+        # Refine text for positive and negative word clouds
+        positive_text = " ".join(visuali_data.positive_reviews)
+        negative_text = " ".join(visuali_data.negative_reviews)
+
+        # Generate refined word clouds
+        positive_wordcloud = generate_wordcloud(positive_text, sentiment='positive')
+        negative_wordcloud = generate_wordcloud(negative_text, sentiment='negative')
+
+        return render(request, 'BankSense/index.html', {
+            'visuali_data': visuali_data,
+            'service_list': service_list,
+            'positive_wordcloud': positive_wordcloud,
+            'negative_wordcloud': negative_wordcloud
+        })
 
     except Exception as e:
         print(str(e))
         return render(request, 'BankSense/index.html', {'error': str(e)})
+
+# Helper function to generate a refined word cloud
+def generate_wordcloud(text, sentiment='positive'):
+    # Define stopwords to remove common and unhelpful words
+    common_stopwords = {"the", "and", "to", "in", "it", "is", "this", "that", "with", "for", "on", "as", "was",
+                        "are", "but", "be", "have", "at", "or", "from", "app", "bank", "service", "customer", "one",
+                        "like", "can", "get", "use", "using", "also", "would", "will", "make", "good", "bad"}
+
+    # Tokenize text and filter out stopwords and short words
+    words = re.findall(r'\b\w+\b', text.lower())
+    filtered_words = [word for word in words if word not in common_stopwords and len(word) > 2]
+
+    # Generate the word cloud
+    wordcloud = WordCloud(
+        width=400,
+        height=200,
+        background_color="white",
+        colormap='Greens' if sentiment == 'positive' else 'Reds',  # Green for positive, red for negative
+        max_words=50
+    ).generate(" ".join(filtered_words))
+
+    # Convert the word cloud to a base64 image
+    buffer = BytesIO()
+    plt.figure(figsize=(4, 2))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    buffer.close()
+    return base64.b64encode(image_png).decode('utf-8')
 
 def analyze_service_sentiment(df, bank_name="ALL"):
     visuali_data = VisualiData()

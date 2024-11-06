@@ -93,6 +93,28 @@
         .custom-modal-width {
             max-width: 60%; /* Change this value to adjust the width */
         }
+        .chip-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+    .chip {
+        padding: 8px 12px;
+        font-size: 14px;
+        color: #1565C0; /* Text color */
+        background-color: #E3F2FD; /* Light blue background */
+        border-radius: 20px;
+        border: 1px solid transparent;
+        text-align: center;
+        display: inline-block;
+        cursor: pointer;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    .chip:hover {
+        background-color: #BBDEFB; /* Slightly darker background on hover */
+        border-color: #90CAF9; /* Slight border change on hover */
+    }
     </style>
 </head>
 <body>
@@ -179,23 +201,15 @@
 
             <!-- Insights Section -->
             <div class="row mt-4">
-                <div class="col-lg-6 card-insights">
-                    <h5>Positive Insights</h5>
-                    <ul>
-                        {% for review in visuali_data.positive_reviews %}
-                        <li>{{ review }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div class="col-lg-6 card-insights">
-                    <h5>Negative Insights</h5>
-                    <ul>
-                        {% for review in visuali_data.negative_reviews %}
-                        <li>{{ review }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
+    <div class="col-lg-6 card-insights text-center">
+        <h5>Positive Word Cloud</h5>
+        <img src="data:image/png;base64,{{ positive_wordcloud }}" alt="Positive Word Cloud" class="img-fluid" />
+    </div>
+    <div class="col-lg-6 card-insights text-center">
+        <h5>Negative Word Cloud</h5>
+        <img src="data:image/png;base64,{{ negative_wordcloud }}" alt="Negative Word Cloud" class="img-fluid" />
+    </div>
+</div>
         </main>
     </div>
 
