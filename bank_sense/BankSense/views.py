@@ -1,10 +1,17 @@
+import base64
+import re
 import os
 from datetime import datetime
-
+from collections import Counter
+import base64
+from io import BytesIO
+import matplotlib.pyplot as plt
 import pandas as pd
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
+from matplotlib import pyplot as plt
+from wordcloud import WordCloud
 from .models import Review, VisualiData, ServiceModel
 from django.http import JsonResponse
 import io
@@ -27,11 +34,56 @@ def dashboard_view(request):
         visuali_data.negative_reviews = summarize_reviews(visuali_data.negative_reviews)
 
         service_list.remove('Keyword')  # removing the header
-        return render(request, 'BankSense/index.html', {'visuali_data': visuali_data, 'service_list': service_list})
+
+        # Refine text for positive and negative word clouds
+        positive_text = " ".join(visuali_data.positive_reviews)
+        negative_text = " ".join(visuali_data.negative_reviews)
+
+        # Generate refined word clouds
+        positive_wordcloud = generate_wordcloud(positive_text, sentiment='positive')
+        negative_wordcloud = generate_wordcloud(negative_text, sentiment='negative')
+
+        return render(request, 'BankSense/index.html', {
+            'visuali_data': visuali_data,
+            'service_list': service_list,
+            'positive_wordcloud': positive_wordcloud,
+            'negative_wordcloud': negative_wordcloud
+        })
 
     except Exception as e:
         print(str(e))
         return render(request, 'BankSense/index.html', {'error': str(e)})
+
+# Helper function to generate a refined word cloud
+def generate_wordcloud(text, sentiment='positive'):
+    # Define stopwords to remove common and unhelpful words
+    common_stopwords = {"the", "and", "to", "in", "it", "is", "this", "that", "with", "for", "on", "as", "was",
+                        "are", "but", "be", "have", "at", "or", "from", "app", "bank", "service", "customer", "one",
+                        "like", "can", "get", "use", "using", "also", "would", "will", "make", "good", "bad"}
+
+    # Tokenize text and filter out stopwords and short words
+    words = re.findall(r'\b\w+\b', text.lower())
+    filtered_words = [word for word in words if word not in common_stopwords and len(word) > 2]
+
+    # Generate the word cloud
+    wordcloud = WordCloud(
+        width=400,
+        height=200,
+        background_color="white",
+        colormap='Greens' if sentiment == 'positive' else 'Reds',  # Green for positive, red for negative
+        max_words=50
+    ).generate(" ".join(filtered_words))
+
+    # Convert the word cloud to a base64 image
+    buffer = BytesIO()
+    plt.figure(figsize=(4, 2))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    buffer.close()
+    return base64.b64encode(image_png).decode('utf-8')
 
 def analyze_service_sentiment(df, bank_name="ALL"):
     visuali_data = VisualiData()
@@ -78,6 +130,7 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
     keywords_to_avoid = ['app', 'interface', 'ui', 'layout', 'design', 'update', 'fingertips', 'bug', 'fingerprint',
                          'version']
     common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'Fee']
+
     if service_name is not None:
         common_st_services.insert(0, service_name.replace('-', ' '))  # add selected service at front
         common_st_services.pop() # remove last one.
@@ -260,17 +313,23 @@ def overall_bank_sentiment_dashboard(request):
 
     # Convert the aggregated data to a dictionary format for the template
     aggregated_data_json = aggregated_data.to_dict(orient="records")
+    service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
+
+    # get all bank names
+    service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
+    service_list.remove('Keyword')
+    #return render(request, 'BankSense/index.html', {'visuali_data': visuali_data, 'service_list': service_list})
+
 
     # Pass the data as context to the template
     context = {
         "aggregated_data": aggregated_data_json,
         "top_positive_reviews": top_positive_reviews_text,
         "top_negative_reviews": top_negative_reviews_text,
+        "service_list": service_list,
     }
     return render(request, 'BankSense/index_temp.html', context)
 
-
-from transformers import pipeline
 
 def summarize_reviews(reviews):
     # Initialize the summarization pipeline
