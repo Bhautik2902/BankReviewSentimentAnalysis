@@ -23,7 +23,10 @@ def dashboard_view(request):
         service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
 
         visuali_data = analyze_service_sentiment(df, bank_name, service_name)
-        service_list.remove('Keyword')
+        visuali_data.positive_reviews = summarize_reviews(visuali_data.positive_reviews)
+        visuali_data.negative_reviews = summarize_reviews(visuali_data.negative_reviews)
+
+        service_list.remove('Keyword')  # removing the header
         return render(request, 'BankSense/index.html', {'visuali_data': visuali_data, 'service_list': service_list})
 
     except Exception as e:
@@ -265,3 +268,18 @@ def overall_bank_sentiment_dashboard(request):
         "top_negative_reviews": top_negative_reviews_text,
     }
     return render(request, 'BankSense/index_temp.html', context)
+
+
+from transformers import pipeline
+
+def summarize_reviews(reviews):
+    # Initialize the summarization pipeline
+    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+
+    # Iterate over each review in the list
+    for i in range(len(reviews)):
+        if len(reviews[i]) > 150:
+            summary = summarizer(reviews[i], max_length=50, min_length=30, do_sample=False)
+            reviews[i] = summary[0]['summary_text']
+
+    return reviews
