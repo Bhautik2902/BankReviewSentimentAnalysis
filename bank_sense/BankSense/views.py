@@ -338,7 +338,7 @@ def summarize_reviews(reviews):
     # Iterate over each review in the list
     for i in range(len(reviews)):
         if len(reviews[i]) > 150:
-            summary = summarizer(reviews[i], max_length=50, min_length=30, do_sample=False)
+            summary = summarizer(reviews[i], max_length=250, min_length=30, do_sample=False)
             reviews[i] = summary[0]['summary_text']
 
     return reviews
