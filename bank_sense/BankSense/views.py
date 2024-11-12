@@ -11,15 +11,21 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
 from matplotlib import pyplot as plt
+from nltk import pos_tag
+from nltk.sentiment import SentimentIntensityAnalyzer
 from wordcloud import WordCloud
 from .models import Review, VisualiData, ServiceModel
 from django.http import JsonResponse
 import io
 from google.cloud import storage
-from transformers import pipeline
+from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+import torch
+from tqdm import tqdm
 
+model_name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
 
 # View to list all reviews
@@ -44,8 +50,8 @@ def dashboard_view(request):
         negative_text = " ".join(visuali_data.negative_reviews)
 
         # Generate refined word clouds
-        positive_wordcloud = generate_wordcloud(positive_text, sentiment='positive')
-        negative_wordcloud = generate_wordcloud(negative_text, sentiment='negative')
+        positive_wordcloud = generate_word_cloud(positive_text, sentiment='positive')
+        negative_wordcloud = generate_word_cloud(negative_text, sentiment='negative')
 
         return render(request, 'BankSense/index.html', {
             'visuali_data': visuali_data,
@@ -58,7 +64,7 @@ def dashboard_view(request):
         print(str(e))
         return render(request, 'BankSense/index.html', {'error': str(e)})
 
-stop_words = set(stopwords.words("english"))
+#stop_words = set(stopwords.words("english"))
 # Helper function to generate a refined word cloud
 
 
@@ -288,12 +294,59 @@ def test_gcs_access(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-#def generate_word_cloud(text):
 
+def generate_word_cloud(text, sentiment):
+    # Ensure stopwords are loaded
+    stop_words = set(stopwords.words('english'))
 
+    # Define stopwords to remove common and unhelpful words
+    custom_stopwords = {"the", "and", "to", "in", "it", "is", "this", "that", "with", "for", "on", "as", "was",
+                        "are", "but", "be", "have", "at", "or", "from", "app", "bank", "service", "customer", "one",
+                        "like", "can", "get", "use", "using", "also", "would", "will", "make", "good", "bad","app", "bank", "service", "customer", "one", "like", "can", "get", "use", "using",
+                        "also", "would", "will", "make", "still", "even"}
+    stop_words.update(custom_stopwords)
+    # Tokenize text and filter out stopwords and short words
+    words = re.findall(r'\b\w+\b', text.lower())
+    sentiment_words = []
+    # Initialize progress bar for word processing
+    print("Processing words for sentiment analysis:")
+    for word in tqdm(words, desc="Analyzing", unit="word"):
+        if word not in stop_words and len(word) > 2:
+            # Analyze sentiment of each word using RoBERTa
+            inputs = tokenizer(word, return_tensors="pt")
+            outputs = model(**inputs)
+            scores = torch.softmax(outputs.logits, dim=1).detach().numpy()[0]
+            positive_score, neutral_score, negative_score = scores[2], scores[1], scores[0]
+
+            # Filter words based on sentiment
+            if sentiment == 'positive' and positive_score > 0.4:
+                sentiment_words.append(word)
+            elif sentiment == 'negative' and negative_score > 0.3:
+                sentiment_words.append(word)
+
+    # Generate the word cloud
+    wordcloud = WordCloud(
+        width=400,
+        height=200,
+        background_color="white",
+        colormap='Greens' if sentiment == 'positive' else 'Reds',  # Green for positive, red for negative
+        max_words=50
+    ).generate(" ".join(sentiment_words))
+
+    # Convert the word cloud to a base64 image
+    buffer = BytesIO()
+    plt.figure(figsize=(4, 2))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    buffer.close()
+    return base64.b64encode(image_png).decode('utf-8')
 
 def overall_bank_sentiment_dashboard(request):
 
+    #print("nltk path: ",nltk.data.path)
     df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
     # Step 1: Map sentiment strings to numerical values
     df["sentiment_score"] = df["predicted_sentiment"].map({"positive": 1, "neutral": 0, "negative": -1})
@@ -324,8 +377,8 @@ def overall_bank_sentiment_dashboard(request):
     top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
     top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
 
-    positive_wordcloud = generate_wordcloud(top_positive_reviews_text,sentiment='positive')
-    negative_wordcloud = generate_wordcloud(top_negative_reviews_text,sentiment='negative')
+    positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
+    negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
 
     # Convert the aggregated data to a dictionary format for the template
     aggregated_data_json = aggregated_data.to_dict(orient="records")
@@ -359,3 +412,26 @@ def summarize_reviews(reviews):
             reviews[i] = summary[0]['summary_text']
 
     return reviews
+
+def extract_sentiment_keywords(text, threshold=0.5):
+    positive_keywords = []
+    negative_keywords = []
+
+    # Tokenize the text and obtain embeddings
+    tokens = tokenizer.tokenize(text)
+    inputs = tokenizer(text, return_tensors="pt")
+    outputs = model(**inputs)
+    logits = outputs.logits
+    scores = torch.softmax(logits, dim=1).detach().numpy()
+
+    # Check each token's contribution to sentiment
+    for i, token in enumerate(tokens):
+        word = tokenizer.convert_ids_to_tokens([inputs.input_ids[0][i]])[0]
+        # Assign tokens based on sentiment threshold
+        if scores[0][2] > threshold:  # Positive sentiment score
+            positive_keywords.append(word)
+        elif scores[0][0] > threshold:  # Negative sentiment score
+            negative_keywords.append(word)
+
+    return set(positive_keywords), set(negative_keywords)
+
