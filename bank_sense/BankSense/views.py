@@ -17,6 +17,9 @@ from django.http import JsonResponse
 import io
 from google.cloud import storage
 from transformers import pipeline
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
 
 
 # View to list all reviews
@@ -26,12 +29,13 @@ def dashboard_view(request):
     bank_name = request.GET.get('bank', 'CIBC')
 
     try:
-        df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
+        #df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
+        df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
         service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
 
         visuali_data = analyze_service_sentiment(df, bank_name, service_name)
-        visuali_data.positive_reviews = summarize_reviews(visuali_data.positive_reviews)
-        visuali_data.negative_reviews = summarize_reviews(visuali_data.negative_reviews)
+        # visuali_data.positive_reviews = summarize_reviews(visuali_data.positive_reviews)
+        # visuali_data.negative_reviews = summarize_reviews(visuali_data.negative_reviews)
 
         service_list.remove('Keyword')  # removing the header
 
@@ -54,8 +58,13 @@ def dashboard_view(request):
         print(str(e))
         return render(request, 'BankSense/index.html', {'error': str(e)})
 
+stop_words = set(stopwords.words("english"))
 # Helper function to generate a refined word cloud
-def generate_wordcloud(text, sentiment='positive'):
+
+
+
+def generate_wordcloud(text, sentiment):
+
     # Define stopwords to remove common and unhelpful words
     common_stopwords = {"the", "and", "to", "in", "it", "is", "this", "that", "with", "for", "on", "as", "was",
                         "are", "but", "be", "have", "at", "or", "from", "app", "bank", "service", "customer", "one",
@@ -279,8 +288,13 @@ def test_gcs_access(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+#def generate_word_cloud(text):
+
+
+
 def overall_bank_sentiment_dashboard(request):
-    df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
+
+    df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
     # Step 1: Map sentiment strings to numerical values
     df["sentiment_score"] = df["predicted_sentiment"].map({"positive": 1, "neutral": 0, "negative": -1})
 
@@ -310,6 +324,8 @@ def overall_bank_sentiment_dashboard(request):
     top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
     top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
 
+    positive_wordcloud = generate_wordcloud(top_positive_reviews_text,sentiment='positive')
+    negative_wordcloud = generate_wordcloud(top_negative_reviews_text,sentiment='negative')
 
     # Convert the aggregated data to a dictionary format for the template
     aggregated_data_json = aggregated_data.to_dict(orient="records")
@@ -320,13 +336,14 @@ def overall_bank_sentiment_dashboard(request):
     service_list.remove('Keyword')
     #return render(request, 'BankSense/index.html', {'visuali_data': visuali_data, 'service_list': service_list})
 
-
     # Pass the data as context to the template
     context = {
         "aggregated_data": aggregated_data_json,
         "top_positive_reviews": top_positive_reviews_text,
         "top_negative_reviews": top_negative_reviews_text,
         "service_list": service_list,
+        "positive_wordcloud": positive_wordcloud,
+        "negative_wordcloud": negative_wordcloud,
     }
     return render(request, 'BankSense/index_temp.html', context)
 
