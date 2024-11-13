@@ -395,8 +395,8 @@ def overall_bank_sentiment_dashboard(request):
     )
     top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
     top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
-    top_positive_reviews_text = summarize_large_text(top_positive_reviews_text)
-    top_negative_reviews_text = summarize_large_text(top_positive_reviews_text)
+    #top_positive_reviews_text = summarize_large_text(top_positive_reviews_text)
+    #top_negative_reviews_text = summarize_large_text(top_positive_reviews_text)
     positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
     negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
 
