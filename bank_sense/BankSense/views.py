@@ -146,12 +146,13 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
                          'version']
     common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'Fee']
 
-    if service_name is not None:
-        common_st_services.insert(0, service_name.replace('-', ' '))  # add selected service at front
-        common_st_services.pop() # remove last one.
-
     visualidata = VisualiData()
     visualidata.bank_name = bank_name
+
+    if service_name is not None:
+        common_st_services.insert(0, service_name.replace('-', ' '))  # add selected service at front
+        visualidata.searched_st_service = service_name
+        common_st_services.pop()  # remove last one.
 
     # assigning top 5 services and 1 selected service (if selected)
     for service in common_st_services:

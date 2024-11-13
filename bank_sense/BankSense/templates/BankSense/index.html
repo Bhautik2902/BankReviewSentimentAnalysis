@@ -66,6 +66,10 @@
             margin-right: 10px;
         }
 
+        .custom-dropdown-width {
+            width: auto;
+        }
+
         .chip {
             display: inline-block;
             padding: 0.5rem 1rem;
@@ -98,99 +102,120 @@
         flex-wrap: wrap;
         gap: 10px;
         justify-content: center;
-    }
-    .chip {
-        padding: 8px 12px;
-        font-size: 14px;
-        color: #1565C0; /* Text color */
-        background-color: #E3F2FD; /* Light blue background */
-        border-radius: 20px;
-        border: 1px solid transparent;
-        text-align: center;
-        display: inline-block;
-        cursor: pointer;
-        transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-    .chip:hover {
-        background-color: #BBDEFB; /* Slightly darker background on hover */
-        border-color: #90CAF9; /* Slight border change on hover */
-    }
+        }
+        .chip {
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #1565C0; /* Text color */
+            background-color: #E3F2FD; /* Light blue background */
+            border-radius: 20px;
+            border: 1px solid transparent;
+            text-align: center;
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .chip:hover {
+            background-color: #BBDEFB;
+            border-color: #90CAF9;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-service-name, .h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .separator {
+            width: 1px;
+            height: 24px;
+            background-color: #333;
+        }
+
     </style>
 </head>
 <body>
 
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar -->
         <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-            <div class="text-center my-3">
+            <div class="text-center mb-4">
                 <img src="{% static 'BankSense/banksense_logo.png' %}" alt="Website Logo" class="img-fluid" style="width: 200px; height:60px">
             </div>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Customer Review</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Settings</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Help</a>
-                </li>
-            </ul>
+
+            <div class="d-grid gap-4">
+                 <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle custom-dropdown-width" type="button" data-bs-toggle="dropdown">
+                        {{ visuali_data.bank_name }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/overview">ALL</a></li>
+                        <li><a class="dropdown-item" href="?bank=CIBC">CIBC</a></li>
+                        <li><a class="dropdown-item" href="?bank=RBC">RBC</a></li>
+                        <li><a class="dropdown-item" href="?bank=Scotiabank">Scotiabank</a></li>
+                        <li><a class="dropdown-item" href="?bank=TD">TD</a></li>
+                        <li><a class="dropdown-item" href="?bank=BMO">BMO</a></li>
+                        <li><a class="dropdown-item" href="?bank=NBC">NBC</a></li>
+                    </ul>
+                </div>
+
+                <div class="input-group me-1">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#browseServicesModal">
+                        Browse bank services
+                    </button>
+                </div>
+            </div>
         </nav>
 
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-start align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <div style="margin-right: 2rem">
-                    <!-- Dynamic bank name and review count -->
-                    <h1 class="h2">{{ visuali_data.bank_name }}</h1>
-                    <p class="text-muted">Total Reviews: {{ visuali_data.total_reviews }}</p>
+                   <div class="header-content">
+                        <h1 class="h2">{{ visuali_data.bank_name }}</h1>
+                        <div class="separator"></div>
+
+                        {% if visuali_data.searched_st_service %}
+                            <h1 class="header-service-name">{{ visuali_data.searched_st_service }}</h1>
+                        {% else %}
+                            <h1 class="header-service-name">Credit, Security, Online banking, Mortgage, Fee</h1>
+                        {% endif %}
+                    </div>
+                    {% if visuali_data.searched_st_service %}
+                        <p>Total Reviews: {{ visuali_data.common_services.0.pos_count|add:visuali_data.common_services.0.neg_count|add:visuali_data.common_services.0.neu_count }}</p>
+                    {% else %}
+                        <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
+                    {% endif %}
                 </div>
 
-                <div class="d-flex">
-                    <!-- Search bar and dropdown -->
-                    <div class="input-group me-1">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#browseServicesModal">
-                            Browse bank services
-                        </button>
-                    </div>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            {{ visuali_data.bank_name }}
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/overview">ALL</a></li>
-                            <li><a class="dropdown-item" href="?bank=CIBC">CIBC</a></li>
-                            <li><a class="dropdown-item" href="?bank=RBC">RBC</a></li>
-                            <li><a class="dropdown-item" href="?bank=Scotiabank">Scotiabank</a></li>
-                            <li><a class="dropdown-item" href="?bank=TD">TD</a></li>
-                            <li><a class="dropdown-item" href="?bank=BMO">BMO</a></li>
-                            <li><a class="dropdown-item" href="?bank=NBC">NBC</a></li>
-                        </ul>
-                    </div>
-                </div>
             </div>
 
             <!-- Charts Section -->
             <div class="row">
-                <div class="col-lg-8">
-                    <h5>Banking Sentiment Breakdown: Positive, Neutral, and Negative by Service</h5>
+                <div class="col-lg-8" style="align-content: center">
                     <canvas id="sentimentChart"></canvas>
+                    <h6>Banking Sentiment Breakdown: Positive, Neutral, and Negative by Service</h6>
                 </div>
                 <div class="col-lg-4 text-center">
-                    <h5>Overall Rating</h5>
+                    {% if visuali_data.searched_st_service %}
+                        <h5>Positive reviews for this service in other banks</h5>
+                    {% else %}
+                        <h5>Overall Rating</h5>
+                    {% endif %}
                     <div class="sentiment-score">
                         <h1>{{ visuali_data.overall_rating|floatformat:1 }}</h1>
-                        <canvas id="ratingDonutChart" width="150" height="150"></canvas>
+                        <canvas id="ratingDonutChart" width="120" height="120"></canvas>
                     </div>
-                    <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
+                    {% if visuali_data.searched_st_service %}
+                        <p>Total Reviews: {{ visuali_data.common_services.0.pos_count|add:visuali_data.common_services.0.neg_count|add:visuali_data.common_services.0.neu_count }}</p>
+                    {% else %}
+                        <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
+                    {% endif %}
                     <div class="sentiment-legend">
                         <span class="badge bg-success">Positive {{ visuali_data.pos_count }}</span>
                         <span class="badge bg-warning">Neutral {{ visuali_data.neu_count }}</span>
@@ -210,24 +235,7 @@
                     <img src="data:image/png;base64,{{ negative_wordcloud }}" alt="Negative Word Cloud" class="img-fluid" />
                 </div>
             </div>
-            <div class="row mt-4">
-                <div class="col-lg-6 card-insights">
-                    <h5>Positive Insights</h5>
-                    <ul>
-                        {% for review in visuali_data.positive_reviews %}
-                        <li>{{ review }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div class="col-lg-6 card-insights">
-                    <h5>Negative Insights</h5>
-                    <ul>
-                        {% for review in visuali_data.negative_reviews %}
-                        <li>{{ review }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
+
         </main>
     </div>
 
@@ -253,7 +261,8 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Initialize the sentiment bar chart
-        var sentimentChart = new Chart(document.getElementById('sentimentChart').getContext('2d'), {
+
+         var sentimentChart = new Chart(document.getElementById('sentimentChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: [
@@ -276,7 +285,7 @@
                         backgroundColor: 'yellow',
                         data: [
                            {% for service in visuali_data.common_services %}
-                                {{ service.neg_count }}{% if not forloop.last %},{% endif %}
+                                {{ service.neu_count }}{% if not forloop.last %},{% endif %}
                            {% endfor %}
                         ]
                     },
@@ -300,22 +309,55 @@
                     y: { beginAtZero: true }
                 }
             }
-        });
+         });
 
-        // Initialize the donut chart
-        var donutChart = new Chart(document.getElementById('ratingDonutChart').getContext('2d'), {
-            type: 'doughnut',
+        {% if visuali_data.searched_st_service %}
+            const ctx = document.getElementById('ratingDonutChart').getContext('2d');
+            const myChart = new Chart(ctx, {
+            type: 'bar',
             data: {
-                labels: ['Positive', 'Neutral', 'Negative'],
+                labels: ['RBC', 'Scotiabank', 'BMO', 'TD'],
                 datasets: [{
-                    data: [{{ visuali_data.pos_count }}, {{ visuali_data.neu_count }}, {{ visuali_data.neg_count }}],
-                    backgroundColor: ['green', 'yellow', 'red']
+                    label: 'Performance',
+                    data: [40, 70, 55, 80],
+                    backgroundColor: 'green',
+                    borderColor: 'green',
+                    borderWidth: 1,
+                    borderRadius: 10,  // Make the corners rounded
+                    barThickness: 15
                 }]
             },
             options: {
-                responsive: true
+                indexAxis: 'y',  // This makes the bar chart horizontal
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false  // Hide legend if not needed
+                    }
+                }
             }
         });
+        {% else %}
+           // Initialize the donut chart
+            var donutChart = new Chart(document.getElementById('ratingDonutChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Neutral', 'Negative'],
+                    datasets: [{
+                        data: [{{ visuali_data.pos_count }}, {{ visuali_data.neu_count }}, {{ visuali_data.neg_count }}],
+                        backgroundColor: ['green', 'yellow', 'red']
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        {% endif %}
 
         // Example dynamic chip data
         const services = [
