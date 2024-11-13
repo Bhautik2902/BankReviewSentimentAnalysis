@@ -311,15 +311,32 @@
             }
          });
 
+          function generateRandomData(count, min, max) {
+            const data = [];
+            for (let i = 0; i < count; i++) {
+                data.push(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+            return data;
+          }
+
+        // Get banks from Django variable
+        const banks = [
+            {% for bank in visuali_data.curr_bank_list %}
+                "{{ bank }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const performanceData = generateRandomData(banks.length, 60, 250);
+
         {% if visuali_data.searched_st_service %}
             const ctx = document.getElementById('ratingDonutChart').getContext('2d');
             const myChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['RBC', 'Scotiabank', 'BMO', 'TD'],
+                labels: banks,
                 datasets: [{
                     label: 'Performance',
-                    data: [40, 70, 55, 80],
+                    data: performanceData,
                     backgroundColor: 'green',
                     borderColor: 'green',
                     borderWidth: 1,
@@ -332,7 +349,7 @@
                 scales: {
                     x: {
                         beginAtZero: true,
-                        max: 100
+                        max: 300
                     }
                 },
                 plugins: {
@@ -359,7 +376,6 @@
             });
         {% endif %}
 
-        // Example dynamic chip data
         const services = [
             {% for service in service_list %}
                 "{{ service }}"{% if not forloop.last %},{% endif %}

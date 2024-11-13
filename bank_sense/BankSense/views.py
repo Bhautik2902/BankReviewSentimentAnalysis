@@ -154,9 +154,10 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
     visualidata.bank_name = bank_name
 
     if service_name is not None:
-        common_st_services.insert(0, service_name.replace('-', ' '))  # add selected service at front
+        # common_st_services.insert(0, service_name.replace('-', ' '))  # add selected service at front
+        common_st_services = [service_name]
         visualidata.searched_st_service = service_name
-        common_st_services.pop()  # remove last one.
+        # common_st_services.pop() # remove last one.
 
     # assigning top 5 services and 1 selected service (if selected)
     for service in common_st_services:
@@ -201,7 +202,27 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
         elif sentiment == 'neutral':
             visualidata.neu_count += 1
 
+    common_banks = ['RBC', 'Scotiabank', 'CIBC', 'NBC', 'TD', 'BMO']
+    common_banks.remove(bank_name)  # removing searched bank
+    visualidata.curr_bank_list = common_banks
+
+    # if service_name is not None:
+    #     for _, row in df.iterrows():
+    #         # initializing count to zero
+    #         for bank in common_banks:
+    #             visualidata.service_at_other_banks(bank, 0)
+    #
+    #         review = row['review_text']
+    #         review = str(review).lower()
+    #         sentiment = row['predicted_sentiment']
+    #         bank = row['bank']
+    #
+    #         if sentiment == 'positive' and service_name in review:
+    #             curr_count = visualidata.service_at_other_banks(bank)
+    #             visualidata.service_at_other_banks(bank, curr_count + 1)
+
     return visualidata
+
 
 
 ############################################  utility functions  #######################################################
@@ -324,7 +345,7 @@ def generate_word_cloud(text, sentiment):
                         "also", "would", "will", "make", "still", "even"}
     stop_words.update(custom_stopwords)
     text = preprocess_text(text,stop_words)
-    print("lemmatized text: ", text)
+
     # Tokenize text and filter out stopwords and short words
     words = re.findall(r'\b\w+\b', text.lower())
     sentiment_words = []

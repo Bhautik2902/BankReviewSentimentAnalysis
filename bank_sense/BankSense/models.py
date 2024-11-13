@@ -42,6 +42,8 @@ class VisualiData:
         self.pos_count = 0
         self.neg_count = 0
         self.neu_count = 0
+        self.service_at_other_banks = {}
+        self.curr_bank_list = []
 
 # class ServiceModel:
 #     def __init__(self, name: str, positive: int, negative: int, neutral: int):
