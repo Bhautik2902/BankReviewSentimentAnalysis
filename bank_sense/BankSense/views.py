@@ -6,20 +6,22 @@ from collections import Counter
 import base64
 from io import BytesIO
 import matplotlib.pyplot as plt
+import nltk
 import pandas as pd
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
 from matplotlib import pyplot as plt
-from nltk import pos_tag
+from nltk import pos_tag, word_tokenize
 from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.stem import WordNetLemmatizer
 from wordcloud import WordCloud
 from .models import Review, VisualiData, ServiceModel
 from django.http import JsonResponse
 import io
 from google.cloud import storage
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-from nltk.corpus import stopwords
+from nltk.corpus import stopwords, wordnet
 import torch
 from tqdm import tqdm
 
@@ -27,6 +29,8 @@ model_name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
+# Initialize the summarizer pipeline
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
 # View to list all reviews
 def dashboard_view(request):
@@ -295,6 +299,19 @@ def test_gcs_access(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+def get_wordnet_pos(word):
+    """Map POS tag to first character accepted by lemmatizer"""
+    tag = nltk.pos_tag([word])[0][1][0].upper()
+    tag_dict = {"J": wordnet.ADJ, "N": wordnet.NOUN, "V": wordnet.VERB, "R": wordnet.ADV}
+    return tag_dict.get(tag, wordnet.NOUN)
+def preprocess_text(text,stop_words):
+    tokens = word_tokenize(text.lower())
+    # Remove stopwords and non-alphabetic tokens
+    tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
+    # Lemmatize tokens
+    lemmatizer = WordNetLemmatizer()
+    lemmatized_tokens = [lemmatizer.lemmatize(word, get_wordnet_pos(word)) for word in tokens]
+    return " ".join(lemmatized_tokens)
 
 def generate_word_cloud(text, sentiment):
     # Ensure stopwords are loaded
@@ -306,6 +323,8 @@ def generate_word_cloud(text, sentiment):
                         "like", "can", "get", "use", "using", "also", "would", "will", "make", "good", "bad","app", "bank", "service", "customer", "one", "like", "can", "get", "use", "using",
                         "also", "would", "will", "make", "still", "even"}
     stop_words.update(custom_stopwords)
+    text = preprocess_text(text,stop_words)
+    print("lemmatized text: ", text)
     # Tokenize text and filter out stopwords and short words
     words = re.findall(r'\b\w+\b', text.lower())
     sentiment_words = []
@@ -377,7 +396,8 @@ def overall_bank_sentiment_dashboard(request):
     )
     top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
     top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
-
+    #top_positive_reviews_text = summarize_large_text(top_positive_reviews_text)
+    #top_negative_reviews_text = summarize_large_text(top_positive_reviews_text)
     positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
     negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
 
@@ -435,4 +455,6 @@ def extract_sentiment_keywords(text, threshold=0.5):
             negative_keywords.append(word)
 
     return set(positive_keywords), set(negative_keywords)
+
+
 
