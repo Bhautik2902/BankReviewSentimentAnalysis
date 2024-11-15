@@ -138,6 +138,59 @@
             background-color: #333;
         }
 
+        .overall-sentiment-strip {
+            width: 100%;
+            margin-top: 15px;
+            background: linear-gradient(90deg, #f9f9f9 0%, #f1f1f1 100%);
+            display: flex;
+            justify-content: left;
+            align-items: center;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
+        }
+
+        .overall-sentiment-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .overall-sentiment-counts {
+            display: flex;
+            margin-left: 2rem;
+            gap: 10px;
+        }
+
+        .overall-sentiment-badge {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 20px;
+            text-align: center;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .overall-sentiment-badge.positive {
+            background-color: #28a745; /* Green */
+        }
+
+        .overall-sentiment-badge.neutral {
+            background-color: #ffc107; /* Yellow */
+            color: #000;
+        }
+
+        .overall-sentiment-badge.negative {
+            background-color: #dc3545; /* Red */
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
     </style>
 </head>
 <body>
@@ -200,7 +253,7 @@
             <div class="row">
                 <div class="col-lg-8" style="align-content: center">
                     <canvas id="sentimentChart"></canvas>
-                    <h6>Banking Sentiment Breakdown: Positive, Neutral, and Negative by Service</h6>
+                    <h6 class="text-center">Banking Sentiment Breakdown: Positive, Neutral, and Negative by Service</h6>
                 </div>
                 <div class="col-lg-4 text-center">
                     {% if visuali_data.searched_st_service %}
@@ -213,11 +266,15 @@
                         <canvas id="ratingDonutChart" width="120" height="120"></canvas>
                     </div>
 
-                    <div class="sentiment-legend">
-                        <span class="badge bg-success">Positive {{ visuali_data.pos_count }}</span>
-                        <span class="badge bg-warning">Neutral {{ visuali_data.neu_count }}</span>
-                        <span class="badge bg-danger">Negative {{ visuali_data.neg_count }}</span>
-                    </div>
+                </div>
+            </div>
+
+            <div class="overall-sentiment-strip">
+                <div class="overall-sentiment-title">Overall sentiment count for this bank</div>
+                <div class="overall-sentiment-counts">
+                    <span class="overall-sentiment-badge positive">{{ visuali_data.pos_count }}</span>
+                    <span class="overall-sentiment-badge neutral">{{ visuali_data.neu_count }}</span>
+                    <span class="overall-sentiment-badge negative">{{ visuali_data.neg_count }}</span>
                 </div>
             </div>
 

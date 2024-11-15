@@ -226,9 +226,6 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
                 except Exception as e:
                     print(e)
 
-    for key, value in visualidata.service_at_other_banks.items():
-        print(f"{key}: {value}")
-
     return visualidata
 
 
@@ -359,10 +356,8 @@ def overall_bank_sentiment_dashboard(request):
     )
     top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
     top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
-    #top_positive_reviews_text = summarize_large_text(top_positive_reviews_text)
-    #top_negative_reviews_text = summarize_large_text(top_positive_reviews_text)
-    # positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
-    # negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
+    positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
+    negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
 
     # Convert the aggregated data to a dictionary format for the template
     aggregated_data_json = aggregated_data.to_dict(orient="records")
@@ -371,7 +366,6 @@ def overall_bank_sentiment_dashboard(request):
     # get all bank names
     service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
     service_list.remove('Keyword')
-    #return render(request, 'BankSense/index.html', {'visuali_data': visuali_data, 'service_list': service_list})
 
     # Pass the data as context to the template
     context = {
@@ -379,8 +373,8 @@ def overall_bank_sentiment_dashboard(request):
         "top_positive_reviews": top_positive_reviews_text,
         "top_negative_reviews": top_negative_reviews_text,
         "service_list": service_list,
-        # "positive_wordcloud": positive_wordcloud,
-        # "negative_wordcloud": negative_wordcloud,
+        "positive_wordcloud": positive_wordcloud,
+        "negative_wordcloud": negative_wordcloud,
     }
     return render(request, 'BankSense/index_temp.html', context)
 
