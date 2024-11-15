@@ -29,17 +29,17 @@ model_name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
+
 # Initialize the summarizer pipeline
-summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+# summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
 # View to list all reviews
 def dashboard_view(request):
-
     service_name = request.GET.get('service', None)
+
     bank_name = request.GET.get('bank', 'CIBC')
 
     try:
-        #df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
         df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
         service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
 
@@ -68,13 +68,12 @@ def dashboard_view(request):
         print(str(e))
         return render(request, 'BankSense/index.html', {'error': str(e)})
 
-#stop_words = set(stopwords.words("english"))
+
+stop_words = set(stopwords.words("english"))
+
+
 # Helper function to generate a refined word cloud
-
-
-
 def generate_wordcloud(text, sentiment):
-
     # Define stopwords to remove common and unhelpful words
     common_stopwords = {"the", "and", "to", "in", "it", "is", "this", "that", "with", "for", "on", "as", "was",
                         "are", "but", "be", "have", "at", "or", "from", "app", "bank", "service", "customer", "one",
@@ -103,6 +102,7 @@ def generate_wordcloud(text, sentiment):
     image_png = buffer.getvalue()
     buffer.close()
     return base64.b64encode(image_png).decode('utf-8')
+
 
 def analyze_service_sentiment(df, bank_name="ALL"):
     visuali_data = VisualiData()
@@ -136,12 +136,11 @@ def analyze_service_sentiment(df, bank_name="ALL"):
             visuali_data.neg_count = row["negative_count"]
 
             # Optionally populate positive and negative reviews, if available in df
-            visuali_data.positive_reviews = df[(df["bank"] == row["bank"]) & (df["predicted_sentiment"] == "positive")]["review_text"].tolist()
-            visuali_data.negative_reviews = df[(df["bank"] == row["bank"]) & (df["predicted_sentiment"] == "negative")]["review_text"].tolist()
+            visuali_data.positive_reviews = df[(df["bank"] == row["bank"]) & (df["predicted_sentiment"] == "positive")][
+                "review_text"].tolist()
+            visuali_data.negative_reviews = df[(df["bank"] == row["bank"]) & (df["predicted_sentiment"] == "negative")][
+                "review_text"].tolist()
 
-            # Assuming `common_services` would be populated by additional logic or ServiceModel instances
-            # For now, it's left as an empty list in the VisualiData instance
-    print("this is visuali_data"+str(visuali_data))
     return visuali_data
 
 
@@ -155,6 +154,7 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
 
     if service_name is not None:
         # common_st_services.insert(0, service_name.replace('-', ' '))  # add selected service at front
+        service_name = ' '.join(word.replace('-', ' ') for word in service_name.split())
         common_st_services = [service_name]
         visualidata.searched_st_service = service_name
         # common_st_services.pop() # remove last one.
@@ -180,16 +180,16 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
                 sentiment = row['predicted_sentiment']
 
                 # Increment or decrement sentiment_counter based on the sentiment
-                if sentiment == 'positive':  #and all(keyword not in review for keyword in keywords_to_avoid):
+                if sentiment == 'positive':
                     service.pos_count += 1
 
                     if len(visualidata.positive_reviews) < 5:
                         visualidata.positive_reviews.append(review)
-                elif sentiment == 'negative':  #and all(keyword not in review for keyword in keywords_to_avoid):
+                elif sentiment == 'negative':
                     service.neg_count += 1
                     if len(visualidata.negative_reviews) < 5:
                         visualidata.negative_reviews.append(review)
-                elif sentiment == 'neutral':  #and all(keyword not in review for keyword in keywords_to_avoid):
+                elif sentiment == 'neutral':
                     service.neu_count += 1
 
     # generating bank related data
@@ -206,68 +206,33 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
     common_banks.remove(bank_name)  # removing searched bank
     visualidata.curr_bank_list = common_banks
 
-    # if service_name is not None:
-    #     for _, row in df.iterrows():
-    #         # initializing count to zero
-    #         for bank in common_banks:
-    #             visualidata.service_at_other_banks(bank, 0)
-    #
-    #         review = row['review_text']
-    #         review = str(review).lower()
-    #         sentiment = row['predicted_sentiment']
-    #         bank = row['bank']
-    #
-    #         if sentiment == 'positive' and service_name in review:
-    #             curr_count = visualidata.service_at_other_banks(bank)
-    #             visualidata.service_at_other_banks(bank, curr_count + 1)
+    if service_name is not None:
+        # initializing count to zero
+
+        for bank in common_banks:
+            visualidata.service_at_other_banks[bank] = 0
+
+        for _, row in df.iterrows():
+            review = row['review_text']
+            review = str(review).lower()
+
+            if service_name.lower() in review:
+                sentiment = row['predicted_sentiment']
+                bank = row['bank']
+                try:
+                    if sentiment == 'positive':
+                        curr_count = visualidata.service_at_other_banks[bank]
+                        visualidata.service_at_other_banks[bank] = curr_count + 1
+                except Exception as e:
+                    print(e)
+
+    for key, value in visualidata.service_at_other_banks.items():
+        print(f"{key}: {value}")
 
     return visualidata
 
 
-
 ############################################  utility functions  #######################################################
-
-
-def store_data_in_db(request):
-    response = HttpResponse()
-
-    file_path = os.path.join(settings.BASE_DIR, 'BankSense', 'data', 'reddit_google_merged_data.xlsx')
-    response.write(file_path)
-
-    try:
-        df = pd.read_excel(file_path)
-    except Exception as e:
-        response.write(str(e))
-
-    for index, row in df.iterrows():
-        # Convert the date field to a Python datetime object if necessary
-        date_str = row['date']
-        if pd.isnull(date_str):
-            date_obj = None
-        else:
-            try:
-                date_obj = datetime.strptime(date_str, '%Y-%m-%d %H:%M')  # Adjust date format if needed
-            except ValueError:
-                date_obj = None  # Handle any unexpected date formats
-
-        # Create and save the review object
-        review = Review(
-            index=row['Index'],
-            source=row['source'],
-            bank=row['bank'],
-            title=row['title'],
-            review_text=str(row['review_text']),  # Convert to string
-            rating=row['rating'] if not pd.isnull(row['rating']) else None,
-            date=date_obj,
-            url=row['url'] if not pd.isnull(row['url']) else None,
-            source_type=row['source_type'] if not pd.isnull(row['source_type']) else None,
-            review_sentiment=row['review_sentiment'],
-            sentiment_score=row['sentiment_score'],
-        )
-        review.save()
-
-    response.write("review stored successfully")
-    return response
 
 
 def read_csv_from_gcs(bucket_name, file_path):
@@ -277,6 +242,7 @@ def read_csv_from_gcs(bucket_name, file_path):
     csv_data = blob.download_as_bytes()
     df = pd.read_csv(io.BytesIO(csv_data))
     return df
+
 
 def read_services_from_gcs(bucket_name, file_path):
     storage_client = storage.Client()
@@ -292,40 +258,14 @@ def read_services_from_gcs(bucket_name, file_path):
     return keywords_list
 
 
-def test_gcs_access(request):
-
-    try:
-        # Verify the environment variable is correctly set
-
-        credentials_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
-        if not credentials_path:
-            return JsonResponse({'status': 'error', 'message': 'GOOGLE_APPLICATION_CREDENTIALS not set'}, status=400)
-
-        # Initialize Google Cloud Storage client
-        storage_client = storage.Client()
-
-        # Specify your bucket name
-        bucket_name = 'your-bucket-name'  # Replace with your actual bucket name
-        bucket = storage_client.get_bucket(bucket_name)
-
-        # List all files (blobs) in the bucket and their paths
-        file_paths = [blob.name for blob in bucket.list_blobs()]
-
-        # Construct full GCS paths for each file
-        gcs_file_paths = [f"gs://{bucket_name}/{file_path}" for file_path in file_paths]
-
-        # Return the file paths
-        return JsonResponse({'status': 'success', 'file_paths': gcs_file_paths})
-
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
 def get_wordnet_pos(word):
     """Map POS tag to first character accepted by lemmatizer"""
     tag = nltk.pos_tag([word])[0][1][0].upper()
     tag_dict = {"J": wordnet.ADJ, "N": wordnet.NOUN, "V": wordnet.VERB, "R": wordnet.ADV}
     return tag_dict.get(tag, wordnet.NOUN)
-def preprocess_text(text,stop_words):
+
+
+def preprocess_text(text, stop_words):
     tokens = word_tokenize(text.lower())
     # Remove stopwords and non-alphabetic tokens
     tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
@@ -334,6 +274,7 @@ def preprocess_text(text,stop_words):
     lemmatized_tokens = [lemmatizer.lemmatize(word, get_wordnet_pos(word)) for word in tokens]
     return " ".join(lemmatized_tokens)
 
+
 def generate_word_cloud(text, sentiment):
     # Ensure stopwords are loaded
     stop_words = set(stopwords.words('english'))
@@ -341,10 +282,11 @@ def generate_word_cloud(text, sentiment):
     # Define stopwords to remove common and unhelpful words
     custom_stopwords = {"the", "and", "to", "in", "it", "is", "this", "that", "with", "for", "on", "as", "was",
                         "are", "but", "be", "have", "at", "or", "from", "app", "bank", "service", "customer", "one",
-                        "like", "can", "get", "use", "using", "also", "would", "will", "make", "good", "bad","app", "bank", "service", "customer", "one", "like", "can", "get", "use", "using",
+                        "like", "can", "get", "use", "using", "also", "would", "will", "make", "good", "bad", "app",
+                        "bank", "service", "customer", "one", "like", "can", "get", "use", "using",
                         "also", "would", "will", "make", "still", "even"}
     stop_words.update(custom_stopwords)
-    text = preprocess_text(text,stop_words)
+    text = preprocess_text(text, stop_words)
 
     # Tokenize text and filter out stopwords and short words
     words = re.findall(r'\b\w+\b', text.lower())
@@ -385,8 +327,8 @@ def generate_word_cloud(text, sentiment):
     buffer.close()
     return base64.b64encode(image_png).decode('utf-8')
 
-def overall_bank_sentiment_dashboard(request):
 
+def overall_bank_sentiment_dashboard(request):
     #print("nltk path: ",nltk.data.path)
     df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
     # Step 1: Map sentiment strings to numerical values
@@ -419,8 +361,8 @@ def overall_bank_sentiment_dashboard(request):
     top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
     #top_positive_reviews_text = summarize_large_text(top_positive_reviews_text)
     #top_negative_reviews_text = summarize_large_text(top_positive_reviews_text)
-    positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
-    negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
+    # positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
+    # negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
 
     # Convert the aggregated data to a dictionary format for the template
     aggregated_data_json = aggregated_data.to_dict(orient="records")
@@ -437,8 +379,8 @@ def overall_bank_sentiment_dashboard(request):
         "top_positive_reviews": top_positive_reviews_text,
         "top_negative_reviews": top_negative_reviews_text,
         "service_list": service_list,
-        "positive_wordcloud": positive_wordcloud,
-        "negative_wordcloud": negative_wordcloud,
+        # "positive_wordcloud": positive_wordcloud,
+        # "negative_wordcloud": negative_wordcloud,
     }
     return render(request, 'BankSense/index_temp.html', context)
 
@@ -454,6 +396,7 @@ def summarize_reviews(reviews):
             reviews[i] = summary[0]['summary_text']
 
     return reviews
+
 
 def extract_sentiment_keywords(text, threshold=0.5):
     positive_keywords = []
@@ -476,6 +419,3 @@ def extract_sentiment_keywords(text, threshold=0.5):
             negative_keywords.append(word)
 
     return set(positive_keywords), set(negative_keywords)
-
-
-

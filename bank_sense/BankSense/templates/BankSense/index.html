@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filter %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -187,9 +188,9 @@
                         {% endif %}
                     </div>
                     {% if visuali_data.searched_st_service %}
-                        <p>Total Reviews: {{ visuali_data.common_services.0.pos_count|add:visuali_data.common_services.0.neg_count|add:visuali_data.common_services.0.neu_count }}</p>
+                        <p style="margin-top: 10px; font-size: 1rem">Total Reviews: {{ visuali_data.common_services.0.pos_count|add:visuali_data.common_services.0.neg_count|add:visuali_data.common_services.0.neu_count }}</p>
                     {% else %}
-                        <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
+                        <p style="margin-top: 10px; font-size: 1rem">Total Reviews: {{ visuali_data.total_reviews }}</p>
                     {% endif %}
                 </div>
 
@@ -211,11 +212,7 @@
                         <h1>{{ visuali_data.overall_rating|floatformat:1 }}</h1>
                         <canvas id="ratingDonutChart" width="120" height="120"></canvas>
                     </div>
-                    {% if visuali_data.searched_st_service %}
-                        <p>Total Reviews: {{ visuali_data.common_services.0.pos_count|add:visuali_data.common_services.0.neg_count|add:visuali_data.common_services.0.neu_count }}</p>
-                    {% else %}
-                        <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
-                    {% endif %}
+
                     <div class="sentiment-legend">
                         <span class="badge bg-success">Positive {{ visuali_data.pos_count }}</span>
                         <span class="badge bg-warning">Neutral {{ visuali_data.neu_count }}</span>
@@ -311,22 +308,12 @@
             }
          });
 
-          function generateRandomData(count, min, max) {
-            const data = [];
-            for (let i = 0; i < count; i++) {
-                data.push(Math.floor(Math.random() * (max - min + 1)) + min);
-            }
-            return data;
-          }
-
         // Get banks from Django variable
         const banks = [
             {% for bank in visuali_data.curr_bank_list %}
                 "{{ bank }}"{% if not forloop.last %},{% endif %}
             {% endfor %}
         ];
-
-        const performanceData = generateRandomData(banks.length, 60, 250);
 
         {% if visuali_data.searched_st_service %}
             const ctx = document.getElementById('ratingDonutChart').getContext('2d');
@@ -335,8 +322,12 @@
             data: {
                 labels: banks,
                 datasets: [{
-                    label: 'Performance',
-                    data: performanceData,
+                    label: 'Positive reviews',
+                    data: [
+                        {% for bank in visuali_data.curr_bank_list %}
+                            "{{ visuali_data.service_at_other_banks|dict_key:bank }}"{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ],
                     backgroundColor: 'green',
                     borderColor: 'green',
                     borderWidth: 1,
@@ -349,7 +340,16 @@
                 scales: {
                     x: {
                         beginAtZero: true,
-                        max: 300
+                        max: {{ visuali_data.service_at_other_banks|get_max|nearest_greater_multiple_of_10|add:20 }},
+                        title: {
+                            display: true,
+                            text: 'Number of Positive Reviews',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: '#333'
+                        }
                     }
                 },
                 plugins: {
