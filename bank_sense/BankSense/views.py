@@ -1,4 +1,5 @@
 import base64
+import json
 import re
 import os
 from datetime import datetime
@@ -29,31 +30,40 @@ model_name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
+
 # Initialize the summarizer pipeline
-summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+# summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
 # View to list all reviews
 def dashboard_view(request):
-
     service_name = request.GET.get('service', None)
+
     bank_name = request.GET.get('bank', 'CIBC')
 
     try:
-        #df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
-        df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
+        # df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
+        json_data = read_json_from_gcs("text-mining-labeled-data", "json_database.json")
         service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
+        dict_object = fetch_data_by_bank_and_service(json_data, bank_name, service_name)
 
-        visuali_data = analyze_service_sentiment(df, bank_name, service_name)
-        # visuali_data.positive_reviews = summarize_reviews(visuali_data.positive_reviews)
-        # visuali_data.negative_reviews = summarize_reviews(visuali_data.negative_reviews)
+        if dict_object is not None:
+            visuali_data = convert_dict_to_model(dict_object)
 
-        # Refine text for positive and negative word clouds
-        positive_text = " ".join(visuali_data.positive_reviews)
-        negative_text = " ".join(visuali_data.negative_reviews)
+            positive_wordcloud = create_word_cloud_image(visuali_data.positive_word_list, 'positive')
+            negative_wordcloud = create_word_cloud_image(visuali_data.negative_word_list, 'negative')
 
-        # Generate refined word clouds
-        positive_wordcloud = generate_word_cloud(positive_text, sentiment='positive')
-        negative_wordcloud = generate_word_cloud(negative_text, sentiment='negative')
+        else:
+            df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
+
+            visuali_data = analyze_service_sentiment(df, bank_name, service_name)
+
+            # Refine text for positive and negative word clouds
+            positive_text = " ".join(visuali_data.positive_reviews)
+            negative_text = " ".join(visuali_data.negative_reviews)
+
+            # Generate refined word clouds
+            positive_wordcloud = generate_word_cloud(positive_text, sentiment='positive')
+            negative_wordcloud = generate_word_cloud(negative_text, sentiment='negative')
 
         return render(request, 'BankSense/index.html', {
             'visuali_data': visuali_data,
@@ -101,6 +111,7 @@ def generate_wordcloud(text, sentiment):
     buffer.close()
     return base64.b64encode(image_png).decode('utf-8')
 
+
 def analyze_service_sentiment(df, bank_name="ALL"):
     visuali_data = VisualiData()
 
@@ -142,8 +153,7 @@ def analyze_service_sentiment(df, bank_name="ALL"):
 
 
 def analyze_service_sentiment(df, bank_name, service_name=None):
-    keywords_to_avoid = ['app', 'interface', 'ui', 'layout', 'design', 'update', 'fingertips', 'bug', 'fingerprint',
-                         'version']
+
     common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'Fee']
 
     visualidata = VisualiData()
@@ -182,11 +192,11 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
 
                     if len(visualidata.positive_reviews) < 5:
                         visualidata.positive_reviews.append(review)
-                elif sentiment == 'negative':  #and all(keyword not in review for keyword in keywords_to_avoid):
+                elif sentiment == 'negative':
                     service.neg_count += 1
                     if len(visualidata.negative_reviews) < 5:
                         visualidata.negative_reviews.append(review)
-                elif sentiment == 'neutral':  #and all(keyword not in review for keyword in keywords_to_avoid):
+                elif sentiment == 'neutral':
                     service.neu_count += 1
 
     # generating bank related data
@@ -226,7 +236,46 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
     return visualidata
 
 
+def create_json(request):
+    common_banks = ['RBC', 'Scotiabank', 'CIBC', 'NBC', 'TD', 'BMO']
+    # services = ["Credit", "Debit card", "Fee", "Rates", "Mortgage", "Online banking", "Customer Service", "Interest Rates", "Insurance", "Points", "Loan", "Interac", "Mobile banking", "Annual Fee", "Performance", "Security", "No Fee", "Rewards", "Yield", "Features", "Quick Access", "Mobile Deposit", "App Crash"]
+    # services = ["Security", "Rewards", "Features", "Quick Access", "Mobile Deposit"]
+    services = ["something"]
+    print("total services:", len(services))
+    try:
+        df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
+        json_objects = []
+
+        for bank in common_banks:
+            for service in services:
+                visuali_data = analyze_service_sentiment(df, bank, None)
+                positive_text = " ".join(visuali_data.positive_reviews)
+                negative_text = " ".join(visuali_data.negative_reviews)
+
+                visuali_data.positive_word_list = generate_word_cloud_keyword_list(positive_text, sentiment='positive')
+                visuali_data.negative_word_list = generate_word_cloud_keyword_list(negative_text, sentiment='negative')
+
+                json_objects.append(visuali_data)
+                print(bank, "-", service)
+
+        save_models_to_json_file(json_objects, "json_database.json")
+
+    except Exception as e:
+        print(e)
+
+
+
 ############################################  utility functions  #######################################################
+
+
+def save_models_to_json_file(models, filename):
+
+    model_dicts = [model.to_dict() for model in models]
+
+    # Serialize to JSON and write to file
+    with open(filename, "w") as json_file:
+        json.dump(model_dicts, json_file, indent=4)
+    print(f"Models saved to {filename}")
 
 
 def read_csv_from_gcs(bucket_name, file_path):
@@ -250,6 +299,16 @@ def read_services_from_gcs(bucket_name, file_path):
         keywords_list.append(row[0])
 
     return keywords_list
+
+
+def read_json_from_gcs(bucket_name, file_path):
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(file_path)
+    json_data = blob.download_as_text()
+    data = json.loads(json_data)
+    print(type(data))
+    return data
 
 
 def get_wordnet_pos(word):
@@ -322,6 +381,40 @@ def generate_word_cloud(text, sentiment):
     return base64.b64encode(image_png).decode('utf-8')
 
 
+def generate_word_cloud_keyword_list(text, sentiment):
+    # Ensure stopwords are loaded
+    stop_words = set(stopwords.words('english'))
+
+    # Define stopwords to remove common and unhelpful words
+    custom_stopwords = {"the", "and", "to", "in", "it", "is", "this", "that", "with", "for", "on", "as", "was",
+                        "are", "but", "be", "have", "at", "or", "from", "app", "bank", "service", "customer", "one",
+                        "like", "can", "get", "use", "using", "also", "would", "will", "make", "good", "bad", "app",
+                        "bank", "service", "customer", "one", "like", "can", "get", "use", "using",
+                        "also", "would", "will", "make", "still", "even"}
+    stop_words.update(custom_stopwords)
+    text = preprocess_text(text, stop_words)
+
+    # Tokenize text and filter out stopwords and short words
+    words = re.findall(r'\b\w+\b', text.lower())
+    sentiment_words = []
+    # Initialize progress bar for word processing
+    print("Processing words for sentiment analysis:")
+    for word in words:
+        if word not in stop_words and len(word) > 2:
+            inputs = tokenizer(word, return_tensors="pt")
+            outputs = model(**inputs)
+            scores = torch.softmax(outputs.logits, dim=1).detach().numpy()[0]
+            positive_score, neutral_score, negative_score = scores[2], scores[1], scores[0]
+
+            # Filter words based on sentiment
+            if sentiment == 'positive' and positive_score > 0.4:
+                sentiment_words.append(word)
+            elif sentiment == 'negative' and negative_score > 0.3:
+                sentiment_words.append(word)
+
+    return sentiment_words
+
+
 def overall_bank_sentiment_dashboard(request):
     #print("nltk path: ",nltk.data.path)
     df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
@@ -353,8 +446,6 @@ def overall_bank_sentiment_dashboard(request):
     )
     top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
     top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
-    #top_positive_reviews_text = summarize_large_text(top_positive_reviews_text)
-    #top_negative_reviews_text = summarize_large_text(top_positive_reviews_text)
     positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
     negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
 
@@ -413,4 +504,100 @@ def extract_sentiment_keywords(text, threshold=0.5):
     return set(positive_keywords), set(negative_keywords)
 
 
+def convert_dict_to_model(data):
+    visuali_data = VisualiData()
 
+    # Assign values directly
+    visuali_data.bank_name = data.get("bank_name", "")
+    visuali_data.total_reviews = data.get("total_reviews", 0)
+    visuali_data.avg_rating = data.get("avg_rating", 0.0)
+    visuali_data.searched_st_service = data.get("searched_st_service", "")
+    visuali_data.searched_query = data.get("searched_query", "")
+
+    visuali_data.positive_reviews = data.get("positive_reviews", [])
+    visuali_data.negative_reviews = data.get("negative_reviews", [])
+    visuali_data.pos_count = data.get("pos_count", 0)
+    visuali_data.neg_count = data.get("neg_count", 0)
+    visuali_data.neu_count = data.get("neu_count", 0)
+
+    visuali_data.service_at_other_banks = data.get("service_at_other_banks", {})
+    visuali_data.curr_bank_list = data.get("curr_bank_list", [])
+    visuali_data.positive_word_list = data.get("positive_word_list", [])
+    visuali_data.negative_word_list = data.get("negative_word_list", [])
+
+    # Convert common_services list to ServiceModel instances
+    common_services_data = data.get("common_services", [])
+
+    for service in common_services_data:
+        temp_model = ServiceModel()
+        temp_model.name = service.get("name", "")
+        temp_model.pos_count = service.get("pos_count", 0)
+        temp_model.neg_count = service.get("neg_count", 0)
+        temp_model.neu_count = service.get("neu_count", 0)
+
+        visuali_data.common_services.append(temp_model)
+
+    return visuali_data
+
+
+def create_word_cloud_image(sentiment_words, sentiment):
+    offensive_words = [
+        "f***", "f***er", "f***ing", "fuck", "fucker", "fucking",
+        "s***", "s***ty", "shit", "shitty",
+        "b****", "b***ard", "bitch", "bastard",
+        "a**", "a***hole", "ass", "asshole",
+        "d***", "d***head", "damn", "dick", "dickhead",
+        "c***", "cunt",
+        "p****", "pussy",
+        "w****", "whore",
+        "s***", "slut",
+        "t***", "tits",
+        "v****", "vagina",
+        "j****", "jerk", "b******", "blowjob",
+        "hell",
+        "lmao", "wtf",
+        "suck", "s***", "s*ck", "s**k", "nigga", "n****", "fuking",
+        "coronavirus", "corona", "unemployment"
+    ]
+
+    sentiment_words = [
+        word for word in sentiment_words
+        if word not in offensive_words
+    ]
+
+    wordcloud = WordCloud(
+        width=400,
+        height=200,
+        background_color="white",
+        colormap='Greens' if sentiment == 'positive' else 'Reds',
+        max_words=50
+    ).generate(" ".join(sentiment_words))
+
+    # Convert the word cloud to a base64 image
+    buffer = BytesIO()
+    plt.figure(figsize=(4, 2))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    buffer.close()
+    return base64.b64encode(image_png).decode('utf-8')
+
+
+def fetch_data_by_bank_and_service(json_data, bank_name, service_name):
+    if service_name is not None:
+        service_name = ' '.join(word.replace('-', ' ') for word in service_name.split())
+
+        for entry in json_data:
+            # Check if the dictionary contains the matching bank_name and service_name
+            if entry.get("bank_name") == bank_name and entry.get("searched_st_service") == service_name:
+                return entry
+
+    else:
+        for entry in json_data:
+            # Check if the dictionary contains the matching bank_name and service_name
+            if entry.get("bank_name") == bank_name and entry.get("searched_st_service") == "":
+                return entry
+
+    return None
