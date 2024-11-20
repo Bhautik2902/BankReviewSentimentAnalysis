@@ -97,28 +97,37 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-            <div class="text-center my-3">
-                <img src="{% static 'BankSense/banksense_logo.png' %}" alt="Website Logo" class="img-fluid" style="max-width: 120px;">
+    <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="text-center mb-4">
+                <a href ="{% url 'BankSense:overview_dashboard' %}">
+                  <img src="{% static 'BankSense/banksense_logo.png' %}" alt="Website Logo" class="img-fluid" style="width: 200px; height:60px">
+                </a>
             </div>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Customer Review</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Settings</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Help</a>
-                </li>
-            </ul>
+
+            <div class="d-grid gap-4">
+                 <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle custom-dropdown-width" type="button" data-bs-toggle="dropdown">
+                        ALL
+                    </button>
+                    <ul class="dropdown-menu">
+
+                        <li><a class="dropdown-item" href="?bank=CIBC">CIBC</a></li>
+                        <li><a class="dropdown-item" href="?bank=RBC">RBC</a></li>
+                        <li><a class="dropdown-item" href="?bank=Scotiabank">Scotiabank</a></li>
+                        <li><a class="dropdown-item" href="?bank=TD">TD</a></li>
+                        <li><a class="dropdown-item" href="?bank=BMO">BMO</a></li>
+                        <li><a class="dropdown-item" href="?bank=NBC">NBC</a></li>
+                    </ul>
+                </div>
+
+                <div class="input-group me-1">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#browseServicesModal">
+                        Browse bank services
+                    </button>
+                </div>
+            </div>
         </nav>
+
 
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
@@ -126,38 +135,6 @@
                 <div style="margin-right: 2rem">
                     <h1 class="h2">Overall Sentiment</h1>
                     <p class="text-muted">Total Reviews: <span id="totalReviews">{{ totalReviews }}</span></p>
-                </div>
-
-                <div class="d-flex">
-                    <!-- Search bar and dropdown -->
-                    <div class="input-group me-1">
-
-                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#browseServicesModal">
-                            Browse bank services
-                        </button>
-                    </div>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            ALL
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/?bank=CIBC">CIBC</a></li>
-                            <li><a class="dropdown-item" href="/?bank=RBC">RBC</a></li>
-                            <li><a class="dropdown-item" href="/?bank=Scotiabank">Scotiabank</a></li>
-                            <li><a class="dropdown-item" href="/?bank=TD">TD</a></li>
-                            <li><a class="dropdown-item" href="/?bank=BMO">BMO</a></li>
-                            <li><a class="dropdown-item" href="/?bank=NBC">NBC</a></li>
-                        </ul>
-                    </div>
-                    <!-- User profile -->
-                    <div class="dropdown ms-3">
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">Profile</a></li>
-                            <li><a class="dropdown-item" href="#">Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Logout</a></li>
-                        </ul>
-                    </div>
                 </div>
             </div>
 

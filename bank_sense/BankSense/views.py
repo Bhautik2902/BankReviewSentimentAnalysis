@@ -29,25 +29,23 @@ model_name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
-
 # Initialize the summarizer pipeline
-# summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
 # View to list all reviews
 def dashboard_view(request):
-    service_name = request.GET.get('service', None)
 
+    service_name = request.GET.get('service', None)
     bank_name = request.GET.get('bank', 'CIBC')
 
     try:
+        #df = read_csv_from_gcs("text-mining-labeled-data", "labeled_reviews1")
         df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
         service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
 
         visuali_data = analyze_service_sentiment(df, bank_name, service_name)
         # visuali_data.positive_reviews = summarize_reviews(visuali_data.positive_reviews)
         # visuali_data.negative_reviews = summarize_reviews(visuali_data.negative_reviews)
-
-        service_list.remove('Keyword')  # removing the header
 
         # Refine text for positive and negative word clouds
         positive_text = " ".join(visuali_data.positive_reviews)
@@ -102,7 +100,6 @@ def generate_wordcloud(text, sentiment):
     image_png = buffer.getvalue()
     buffer.close()
     return base64.b64encode(image_png).decode('utf-8')
-
 
 def analyze_service_sentiment(df, bank_name="ALL"):
     visuali_data = VisualiData()
@@ -185,11 +182,11 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
 
                     if len(visualidata.positive_reviews) < 5:
                         visualidata.positive_reviews.append(review)
-                elif sentiment == 'negative':
+                elif sentiment == 'negative':  #and all(keyword not in review for keyword in keywords_to_avoid):
                     service.neg_count += 1
                     if len(visualidata.negative_reviews) < 5:
                         visualidata.negative_reviews.append(review)
-                elif sentiment == 'neutral':
+                elif sentiment == 'neutral':  #and all(keyword not in review for keyword in keywords_to_avoid):
                     service.neu_count += 1
 
     # generating bank related data
@@ -356,6 +353,8 @@ def overall_bank_sentiment_dashboard(request):
     )
     top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
     top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
+    #top_positive_reviews_text = summarize_large_text(top_positive_reviews_text)
+    #top_negative_reviews_text = summarize_large_text(top_positive_reviews_text)
     positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
     negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
 
@@ -365,7 +364,6 @@ def overall_bank_sentiment_dashboard(request):
 
     # get all bank names
     service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
-    service_list.remove('Keyword')
 
     # Pass the data as context to the template
     context = {
@@ -413,3 +411,6 @@ def extract_sentiment_keywords(text, threshold=0.5):
             negative_keywords.append(word)
 
     return set(positive_keywords), set(negative_keywords)
+
+
+
