@@ -553,11 +553,9 @@ var sentimentChart = new Chart(document.getElementById('sentimentChart').getCont
                         label: 'Negative',
                         backgroundColor: 'red',
                         data: [
-                            {{ visuali_data.common_services.0.neg_count }},
-                            {{ visuali_data.common_services.1.neg_count }},
-                            {{ visuali_data.common_services.2.neg_count }},
-                            {{ visuali_data.common_services.3.neg_count }},
-                            {{ visuali_data.common_services.4.neg_count }}
+                            {% for service in visuali_data.common_services %}
+                                {{ service.neg_count }}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
                         ]
                     }
                 ]
@@ -567,6 +565,22 @@ var sentimentChart = new Chart(document.getElementById('sentimentChart').getCont
                 scales: {
                     x: { beginAtZero: true },
                     y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const index = context.dataIndex;
+                                const label = context.chart.data.labels[index];
+
+                                const datasets = context.chart.data.datasets;
+                            }
+                        }
+                    }
                 }
             }
          });
@@ -578,33 +592,62 @@ var sentimentChart = new Chart(document.getElementById('sentimentChart').getCont
             {% endfor %}
         ];
 
-
+        {# when bank name with specific service has been selected #}
         {% if visuali_data.searched_st_service %}
             const ctx = document.getElementById('ratingDonutChart').getContext('2d');
             const myChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: banks,
-                datasets: [{
-                    label: 'Positive reviews',
-                    data: [
-                        {% for bank in visuali_data.curr_bank_list %}
-                            "{{ visuali_data.service_at_other_banks|dict_key:bank }}"{% if not forloop.last %},{% endif %}
-                        {% endfor %}
-                    ],
-                    backgroundColor: 'green',
-                    borderColor: 'green',
-                    borderWidth: 1,
-                    borderRadius: 10,  // Make the corners rounded
-                    barThickness: 15
-                }]
+                datasets: [
+                    {
+                        label: 'Positive Reviews',
+                        data: [
+                            {% for bank in visuali_data.curr_bank_list %}
+                                "{{ visuali_data.pos_service_at_other_banks|dict_key:bank }}"{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ],
+                        backgroundColor: 'green',
+                        borderColor: 'green',
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        barThickness: 15
+                    },
+                    {
+                        label: 'Neutral Reviews',
+                        data: [
+                            {% for bank in visuali_data.curr_bank_list %}
+                                "{{ visuali_data.neu_service_at_other_banks|dict_key:bank }}"{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ],
+                        backgroundColor: 'yellow',
+                        borderColor: 'yellow',
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        barThickness: 15
+                    },
+                    {
+                        label: 'Negative Reviews',
+                        data: [
+                            {% for bank in visuali_data.curr_bank_list %}
+                                "{{ visuali_data.neg_service_at_other_banks|dict_key:bank }}"{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ],
+                        backgroundColor: 'red',
+                        borderColor: 'red',
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        barThickness: 15
+                    }
+                ]
             },
             options: {
-                indexAxis: 'y',  // This makes the bar chart horizontal
+                indexAxis: 'y',
+                responsive: true,
                 scales: {
                     x: {
                         beginAtZero: true,
-                        max: {{ visuali_data.service_at_other_banks|get_max|nearest_greater_multiple_of_10|add:20 }},
+                        max: {{ visuali_data.neg_service_at_other_banks|get_max|nearest_greater_multiple_of_10|add:20 }}, {# find max value and add some margin #}
                         title: {
                             display: true,
                             text: 'Number of Positive Reviews',
@@ -618,12 +661,25 @@ var sentimentChart = new Chart(document.getElementById('sentimentChart').getCont
                 },
                 plugins: {
                     legend: {
-                        display: false  // Hide legend if not needed
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const associatedBank = context.chart.data.labels[context.dataIndex];
+                                const other_bank_total = {{ visuali_data.other_banks_total|safe }}
+
+                                const total = other_bank_total[associatedBank]
+                                const percentage = ((value / total) * 100).toFixed(2);
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
                 }
             }
         });
-        {% else %}
+        {% else %}         {#when just bank name is selected#}
            // Initialize the donut chart
             var donutChart = new Chart(document.getElementById('ratingDonutChart').getContext('2d'), {
                 type: 'doughnut',

@@ -50,7 +50,10 @@ class VisualiData:
         self.pos_count = 0
         self.neg_count = 0
         self.neu_count = 0
-        self.service_at_other_banks = {}
+        self.pos_service_at_other_banks = {}
+        self.neg_service_at_other_banks = {}
+        self.neu_service_at_other_banks = {}
+        self.other_banks_total = {}
         self.curr_bank_list = []
 
         self.positive_word_list = []
@@ -69,7 +72,10 @@ class VisualiData:
             "pos_count": self.pos_count,
             "neg_count": self.neg_count,
             "neu_count": self.neu_count,
-            "service_at_other_banks": self.service_at_other_banks,
+            "pos_service_at_other_banks": self.pos_service_at_other_banks,
+            "neg_service_at_other_banks": self.neg_service_at_other_banks,
+            "neu_service_at_other_banks": self.neu_service_at_other_banks,
+            "other_banks_total": self.other_banks_total,
             "curr_bank_list": self.curr_bank_list,
             "positive_word_list": self.positive_word_list,
             "negative_word_list": self.negative_word_list

@@ -95,7 +95,6 @@ def dashboard_view(request):
         else:
 
             if service_name not in service_list:
-                print('generating no_data image',generate_no_data_image())
                 return render(request, 'BankSense/index.html', {
                     'visuali_data': VisualiData(),
                     'service_list': service_list,
@@ -179,6 +178,7 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
         service_name = ' '.join(word.replace('-', ' ') for word in service_name.split())
         common_st_services = [service_name]
         visualidata.searched_st_service = service_name
+        print("This has been searched", visualidata.searched_st_service)
         # common_st_services.pop() # remove last one.
 
     # assigning top 5 services and 1 selected service (if selected)
@@ -204,7 +204,6 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
                 # Increment or decrement sentiment_counter based on the sentiment
                 if sentiment == 'positive':
                     service.pos_count += 1
-
                     if len(visualidata.positive_reviews) < 5:
                         visualidata.positive_reviews.append(review)
                 elif sentiment == 'negative':
@@ -232,7 +231,9 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
         # initializing count to zero
 
         for bank in common_banks:
-            visualidata.service_at_other_banks[bank] = 0
+            visualidata.pos_service_at_other_banks[bank] = 0
+            visualidata.neg_service_at_other_banks[bank] = 0
+            visualidata.neu_service_at_other_banks[bank] = 0
 
         for _, row in df.iterrows():
             review = row['review_text']
@@ -243,11 +244,21 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
                 bank = row['bank']
                 try:
                     if sentiment == 'positive':
-                        curr_count = visualidata.service_at_other_banks[bank]
-                        visualidata.service_at_other_banks[bank] = curr_count + 1
+                        curr_count = visualidata.pos_service_at_other_banks[bank]
+                        visualidata.pos_service_at_other_banks[bank] = curr_count + 1
+                    elif sentiment == 'negative':
+                        curr_count = visualidata.neg_service_at_other_banks[bank]
+                        visualidata.neg_service_at_other_banks[bank] = curr_count + 1
+                    else:
+                        curr_count = visualidata.neu_service_at_other_banks[bank]
+                        visualidata.neu_service_at_other_banks[bank] = curr_count + 1
                 except Exception as e:
                     print(e)
 
+
+        for bank in common_banks:
+            visualidata.other_banks_total[bank] = visualidata.pos_service_at_other_banks[bank] + visualidata.neg_service_at_other_banks[bank] + visualidata.neu_service_at_other_banks[bank]
+            print(bank, "-", visualidata.other_banks_total[bank])
 
     return visualidata
 
@@ -255,7 +266,7 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
 def create_json(request):
     common_banks = ['RBC', 'Scotiabank', 'CIBC', 'NBC', 'TD', 'BMO']
     # services = ["Credit", "Debit card", "Fee", "Rates", "Mortgage", "Online banking", "Customer Service", "Interest Rates", "Insurance", "Points", "Loan", "Interac", "Mobile banking", "Annual Fee", "Performance", "Security", "No Fee", "Rewards", "Yield", "Features", "Quick Access", "Mobile Deposit", "App Crash"]
-    # services = ["Security", "Rewards", "Features", "Quick Access", "Mobile Deposit"]
+    # services = ["Credit", "Debit card", "Fee", "Rates", "Mortgage", "Online banking"]
     services = ["something"]
     print("total services:", len(services))
     try:
@@ -264,7 +275,7 @@ def create_json(request):
 
         for bank in common_banks:
             for service in services:
-                visuali_data = analyze_service_sentiment(df, bank, None)
+                visuali_data = analyze_service_sentiment(df, bank,  None)
                 positive_text = " ".join(visuali_data.positive_reviews)
                 negative_text = " ".join(visuali_data.negative_reviews)
 
@@ -573,7 +584,11 @@ def convert_dict_to_model(data):
     visuali_data.neg_count = data.get("neg_count", 0)
     visuali_data.neu_count = data.get("neu_count", 0)
 
-    visuali_data.service_at_other_banks = data.get("service_at_other_banks", {})
+    visuali_data.pos_service_at_other_banks = data.get("pos_service_at_other_banks", {})
+    visuali_data.neg_service_at_other_banks = data.get("neg_service_at_other_banks", {})
+    visuali_data.neu_service_at_other_banks = data.get("neu_service_at_other_banks", {})
+    visuali_data.other_banks_total = data.get("other_banks_total", {})
+
     visuali_data.curr_bank_list = data.get("curr_bank_list", [])
     visuali_data.positive_word_list = data.get("positive_word_list", [])
     visuali_data.negative_word_list = data.get("negative_word_list", [])
@@ -610,7 +625,7 @@ def create_word_cloud_image(sentiment_words, sentiment):
         "hell",
         "lmao", "wtf",
         "suck", "s***", "s*ck", "s**k", "nigga", "n****", "fuking",
-        "coronavirus", "corona", "unemployment"
+        "coronavirus", "corona", "unemployment", "supbar", "standard"
     ]
 
     sentiment_words = [
@@ -653,11 +668,12 @@ def fetch_data_by_bank_and_service(json_data, bank_name, service_name):
         for entry in json_data:
             # Check if the dictionary contains the matching bank_name and service_name
             if entry.get("bank_name") == bank_name and entry.get("searched_st_service") == service_name:
+                print(entry)
                 return entry
 
     else:
         for entry in json_data:
-            # Check if the dictionary contains the matching bank_name and service_name
+            # Check if the dictionary contains the matching bank_name
             if entry.get("bank_name") == bank_name and entry.get("searched_st_service") == "":
                 return entry
 
