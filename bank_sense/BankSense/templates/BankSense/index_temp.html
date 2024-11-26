@@ -90,6 +90,23 @@
         .custom-modal-width {
             max-width: 60%; /* Change this value to adjust the width */
         }
+        .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 2s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: block; /* Temporarily show the spinner */
+    background-color: rgba(255, 255, 255, 0.8); /* Add background for testing */
+}
+  #loading-spinner {
+    background-color: rgba(255, 255, 255, 0.8);
+}
     </style>
 </head>
 <body>
@@ -100,7 +117,7 @@
     <nav class="col-md-2 d-none d-md-block bg-light sidebar">
             <div class="text-center mb-4">
                 <a href ="{% url 'BankSense:overview_dashboard' %}">
-                  <img src="{% static 'BankSense/banksense_logo.png' %}" alt="Website Logo" class="img-fluid" style="width: 200px; height:60px">
+                  <img src="{% static 'BankSense/banksense_logo.png' %}" id="logo" alt="Website Logo" class="img-fluid" style="width: 200px; height:60px">
                 </a>
             </div>
 
@@ -111,12 +128,12 @@
                     </button>
                     <ul class="dropdown-menu">
 
-                        <li><a class="dropdown-item" href="?bank=CIBC">CIBC</a></li>
-                        <li><a class="dropdown-item" href="?bank=RBC">RBC</a></li>
-                        <li><a class="dropdown-item" href="?bank=Scotiabank">Scotiabank</a></li>
-                        <li><a class="dropdown-item" href="?bank=TD">TD</a></li>
-                        <li><a class="dropdown-item" href="?bank=BMO">BMO</a></li>
-                        <li><a class="dropdown-item" href="?bank=NBC">NBC</a></li>
+                        <li><a class="dropdown-item" href="/?bank=CIBC">CIBC</a></li>
+                        <li><a class="dropdown-item" href="/?bank=RBC">RBC</a></li>
+                        <li><a class="dropdown-item" href="/?bank=Scotiabank">Scotiabank</a></li>
+                        <li><a class="dropdown-item" href="/?bank=TD">TD</a></li>
+                        <li><a class="dropdown-item" href="/?bank=BMO">BMO</a></li>
+                        <li><a class="dropdown-item" href="/?bank=NBC">NBC</a></li>
                     </ul>
                 </div>
 
@@ -158,34 +175,17 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Insights Section -->
-           <!-- <div class="row mt-4">
-                <div class="col-lg-6 card-insights">
-
-                    <h5>Positive Insights</h5>
-                    <ul>
-                        {% if  top_positive_reviews %}
-                            <li> {{ top_positive_reviews }}</li>
-                        {% endif %}
-                    </ul>
-                </div>
-                <div class="col-lg-6 card-insights">
-                    <h5>Negative Insights</h5>
-                    <ul>
-                        <li>{{ top_negative_reviews }}</li>
-                    </ul>
-                </div>
-            </div>-->
          <!-- Insights Section -->
             <div class="row mt-4">
                 <div class="col-lg-6 card-insights text-center">
                     <h5>Positive Word Cloud</h5>
-                    <img src="data:image/png;base64,{{ positive_wordcloud }}" alt="Positive Word Cloud" class="img-fluid" />
+
+                    <img src="data:image/png;base64,{{positiveWordCloud}}" alt="Positive Word Cloud" class="img-fluid" id="positive-word-cloud"/>
+{#                    <img src="data:image/png;base64,{{ positive_wordcloud }}" alt="Positive Word Cloud" class="img-fluid" />#}
                 </div>
                 <div class="col-lg-6 card-insights text-center">
                     <h5>Negative Word Cloud</h5>
-                    <img src="data:image/png;base64,{{ negative_wordcloud }}" alt="Negative Word Cloud" class="img-fluid" />
+                    <img src="data:image/png;base64,{{negativeWordCloud}}" alt="Negative Word Cloud" class="img-fluid" id="negative-word-cloud"/>
                 </div>
             </div>
 
@@ -217,44 +217,48 @@
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const sentimentData = {{ aggregated_data|safe }};  //  context data
-    // Extract topic names and sentiment counts from sentimentData
-    const labels = sentimentData.map(item => item.bank);  // topic names as labels
-    const positiveData = sentimentData.map(item => item.positive_count);
-    const neutralData = sentimentData.map(item => item.neutral_count);
-    const negativeData = sentimentData.map(item => item.negative_count);
-    console.log(" data ",sentimentData)
+const sentimentData = {{ aggregated_data|safe }};  //  context data
+const positiveWordCloud = sentimentData["positive_wordcloud"];
+const negativeWordCloud = sentimentData["negative_wordcloud"];
+const postiveWordCloudImage = document.getElementById('positive-word-cloud');
+const negativeWordCloudImage = document.getElementById('negative-word-cloud');
+postiveWordCloudImage.src=`data:image/png;base64,${positiveWordCloud}`
+negativeWordCloudImage.src=`data:image/png;base64,${negativeWordCloud}`
 
-   const totalPositives = sentimentData.reduce((acc, curr) => acc + curr.positive_count, 0);
-   const totalNeutral = sentimentData.reduce((acc, curr) => acc + curr.neutral_count, 0);
-   const totalNegatives = sentimentData.reduce((acc, curr) => acc + curr.negative_count, 0);
-   const totalReviews = sentimentData.reduce((accumulator, current) => {
-       return accumulator + current.total_reviews;
+// Filter out unwanted keys like "positive_wordcloud" and "negative_wordcloud"
+const filteredData = Object.keys(sentimentData)
+    .filter(key => key !== "positive_wordcloud" && key !== "negative_wordcloud")
+    .reduce((obj, key) => {
+        obj[key] = sentimentData[key];
+        return obj;
+    }, {});
+// list all banks
+const labels = Object.keys(filteredData);
+const totalPositives = labels.map(bank => filteredData[bank].positive_count);
+const totalNeutral = labels.map(bank => filteredData[bank].neutral_count);
+const totalNegatives = labels.map(bank => filteredData[bank].negative_count);
+console.log('Total Positives:', totalPositives);
+console.log('Total Neutral:', totalNeutral);
+console.log('Total Negatives:', totalNegatives);
+const totalPositiveCount = totalPositives.reduce((a, b) => a + b, 0);
+const totalNeutralCount = totalNeutral.reduce((a, b) => a + b, 0);
+const totalNegativeCount = totalNegatives.reduce((a, b) => a + b, 0);
+const totalReviews = totalPositiveCount + totalNeutralCount + totalNegativeCount ;
+const positivePercentage = ((totalPositiveCount / totalReviews) * 100).toFixed(2);
+const neutralPercentage = ((totalNeutralCount / totalReviews) * 100).toFixed(2);
+const negativePercentage = ((totalNegativeCount / totalReviews) * 100).toFixed(2);
+var sentimentScore = ((positivePercentage * 10) + (neutralPercentage * 5) + (negativePercentage * 1)) / 100;
+sentimentScore = sentimentScore.toFixed(1)
+document.getElementById('sentiment_score').innerText = sentimentScore;
+document.getElementById('totalReviews').innerText = totalReviews;
+document.getElementById('totalReviews2').innerText = totalReviews;
+document.getElementById('positive_percentage').innerText=positivePercentage
+document.getElementById('neutral_percentage').innerText=neutralPercentage
+document.getElementById('negative_percentage').innerText=negativePercentage
 
-}, 0);
-   const positivePercentage = ((totalPositives / totalReviews) * 100).toFixed(2);
-        const neutralPercentage = ((totalNeutral / totalReviews) * 100).toFixed(2);
-        const negativePercentage = ((totalNegatives / totalReviews) * 100).toFixed(2);
-
-    var sentimentScore = (
-    (positivePercentage * 10) +
-    (neutralPercentage * 5) +
-    (negativePercentage * 0)
-) / 100;
-    sentimentScore = sentimentScore.toFixed(1)
-   console.log("sentiment score:",sentimentScore)
-    document.getElementById('sentiment_score').innerText = sentimentScore;
-    console.log("Total Counts:", totalPositives, totalNeutral, totalNegatives); // Debugging line
-
-    document.getElementById('totalReviews').innerText = totalReviews;
-    document.getElementById('totalReviews2').innerText = totalReviews;
-    document.getElementById('positive_percentage').innerText=positivePercentage
-    document.getElementById('neutral_percentage').innerText=neutralPercentage
-    document.getElementById('negative_percentage').innerText=negativePercentage
-    console.log("Total Reviews:", totalReviews);
-    // Bar chart example
-    var ctx = document.getElementById('sentimentChart').getContext('2d');
-    var sentimentChart = new Chart(ctx, {
+// Bar chart example
+var ctx = document.getElementById('sentimentChart').getContext('2d');
+var sentimentChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels, //[labels[0].p, 'Service 2', 'Service 3', 'Service 4', 'Service 5'],
@@ -262,17 +266,17 @@
                 {
                     label: 'Positive',
                     backgroundColor: 'green',
-                    data: positiveData//[40, 50, 45, 60, 55]
+                    data: totalPositives //[40, 50, 45, 60, 55]
                 },
                 {
                     label: 'Neutral',
                     backgroundColor: 'yellow',
-                    data: neutralData
+                    data: totalNeutral
                 },
                 {
                     label: 'Negative',
                     backgroundColor: 'red',
-                    data: negativeData
+                    data: totalNegatives
                 }
             ]
         },
@@ -292,9 +296,7 @@
         data: {
             labels: ['Positive', 'Neutral', 'Negative'],
             datasets: [{
-
-                data: [totalPositives, totalNeutral, totalNegatives],
-                {#data: [40, 32, 28],#}
+                data: [totalPositiveCount, totalNeutralCount, totalNegativeCount],
                 backgroundColor: ['green', 'yellow', 'red']
             }]
         },
@@ -303,20 +305,198 @@
         }
     });
 
-        // Example dynamic chip data
+// Spinner creation and removal function
+const createSpinner = () => {
+    const spinner = document.createElement('div');
+    spinner.className = 'loading-spinner';
+    spinner.innerHTML = '<div class="spinner"></div>'; // This will hold the spinner
+    spinner.style.position = 'absolute';
+    spinner.style.top = '50%';
+    spinner.style.left = '50%';
+    spinner.style.transform = 'translate(-50%, -50%)';
+    spinner.style.zIndex = '9999';
+    return spinner;
+};
+
+const handleLogoClick= async (event)=>
+  {
+       const entireWindow = document.body;
+       if(!entireWindow)
+        {
+            console.error('Body element not found.');
+            return;
+        }
+       const existingSpinner = document.querySelector('.loading-spinner');
+       console.log('existing spinner: ',existingSpinner);
+       if(existingSpinner)
+        {
+          existingSpinner.remove();
+        }
+     const spinner = document.createElement('div');
+     spinner.className = 'loading-spinner';
+     spinner.innerHTML = '<div class="spinner"></div>'; // This will hold the spinner
+     spinner.style.position = 'absolute'; // Position it inside the chip
+     spinner.style.top = '50%';
+     spinner.style.left = '50%';
+     spinner.style.transform = 'translate(-50%, -50%)';
+     spinner.style.zIndex = '9999'; // Ensure it is above the chip's content
+     entireWindow.style.position = 'relative';
+     entireWindow.appendChild(spinner);
+     console.log("spinner:",spinner);
+
+     const logo_select = event.target.closest('a');
+     const url = logo_select.href;
+     try
+      {
+       const response = await fetch(url, { method: 'GET' });
+       if (!response.ok)
+        {
+          throw new Error('Network response was not ok');
+        }
+       const html = await response.text();
+       console.log('HTML content received');
+       //spinner.remove(); // Remove spinner after loading
+      }
+     catch(error)
+      {
+       console.error('Error during async operation:', error);
+       spinner.remove();
+      }
+     finally
+      {
+      //Wait for the DOMContentLoaded event to ensure the content has been fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+        spinner.remove(); // Remove spinner after the new content is ready
+      });
+    }
+  }
+const handleBankClick =async (event) =>
+   {
+     console.log("inside handle bank click");
+     const entireWindow = document.body;
+     if(!entireWindow)
+      {
+        console.error('Body element not found.');
+        return;
+      }
+     console.log('entire window',entireWindow);
+     const existingSpinner = document.querySelector('.loading-spinner');
+     console.log('existing spinner: ',existingSpinner);
+     if(existingSpinner)
+       {
+        existingSpinner.remove();
+       }
+     const spinner = createSpinner();
+     entireWindow.style.position = 'relative';
+     entireWindow.appendChild(spinner);
+     console.log("spinner:",spinner);
+     const bank_select = event.target.closest('a');
+     const url = bank_select.href;
+     try
+      {
+       const response = await fetch(url, { method: 'GET' });
+       if (!response.ok)
+        {
+          throw new Error('Network response was not ok');
+        }
+       const html = await response.text();
+       console.log('HTML content received');
+      }
+     catch(error)
+      {
+       console.error('Error during async operation:', error);
+       spinner.remove();
+      }
+     finally
+      {
+      //Wait for the DOMContentLoaded event to ensure the content has been fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+        spinner.remove(); // Remove spinner after the new content is ready
+      });
+    }
+   };
+
+  const handleChipClick = async (event) => {
+  console.log('inside chip click')
+  const chipContainer = document.getElementById('chipContainer');
+  if (!chipContainer) {
+        console.error('chipContainer not found');
+        return;
+    }
+  const existingSpinner = document.querySelector('.loading-spinner');
+  if (existingSpinner)
+   {
+     existingSpinner.remove(); // Remove any existing spinner
+   }
+  const spinner = createSpinner();
+  chipContainer.style.position = 'relative';
+  console.log('spinner: ',spinner)
+  chipContainer.appendChild(spinner);
+  const chip = event.target.closest('.chip');
+  if (!chip) {
+        console.error('Chip element not found');
+        return;
+    }
+  const link = chip.querySelector('a');
+  if (!link) {
+        console.error('Link not found inside chip');
+        return;
+    }
+  const url = link.href;
+
+  try
+    {
+       const response = await fetch(url, { method: 'GET' });
+       if (!response.ok)
+        {
+          throw new Error('Network response was not ok');
+        }
+       const html = await response.text();
+       console.log('HTML content received');
+       //spinner.remove(); // Remove spinner after loading
+    }
+  catch(error)
+    {
+       console.error('Error during async operation:', error);
+       spinner.remove();
+    }
+  finally
+    {
+      //Wait for the DOMContentLoaded event to ensure the content has been fully loaded
+       window.addEventListener('DOMContentLoaded', () => {
+       spinner.remove(); // Remove spinner after the new content is ready
+      });
+    }
+};
+document.addEventListener('DOMContentLoaded', function () {
+    const spinner = document.getElementById("loading-spinner");
+    if (spinner) {
+        spinner.style.display = "none";
+    }
+    const dropdownItems = document.querySelectorAll('.dropdown-item');
+    dropdownItems.forEach((item) => {
+        item.addEventListener('click', handleBankClick);
+    });
+      // Example dynamic chip data
         const services = [
             {% for service in service_list %}
                 "{{ service }}"{% if not forloop.last %},{% endif %}
             {% endfor %}
         ];
+        logo = document.getElementById('logo')
+        logo.addEventListener('click',handleLogoClick)
+        window.addEventListener('popstate', () => {
+        removeSpinner();
+        });
         const chipContainer = document.getElementById('chipContainer');
-         services.forEach(service => {
+        console.log(chipContainer);
+        services.forEach(service => {
             const chip = document.createElement('div');
             chip.className = 'chip';
 
             // Create the anchor tag
             const link = document.createElement('a');
-            link.href = `?service=${encodeURIComponent(service.replace(/\s+/g, '-'))}&bank={{ visuali_data.bank_name }}`;
+            link.href = `?service=${encodeURIComponent(service.replace(/\s+/g, '-'))}&bank=CIBC`;
 
             link.textContent = service;
             link.style.textDecoration = 'none';
@@ -324,22 +504,30 @@
 
             // Append the anchor to the chip div
             chip.appendChild(link);
-
-            // Append the chip to the container
+            chip.addEventListener('click', handleChipClick);            // Append the chip to the container
             chipContainer.appendChild(chip);
         });
           const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', function() {
-            const filter = searchInput.value.toLowerCase();
-            const chips = document.querySelectorAll('.chip');
-            chips.forEach(chip => {
-                if (chip.textContent.toLowerCase().includes(filter)) {
+          searchInput.addEventListener('input', function() {
+          const filter = searchInput.value.toLowerCase();
+          const chips = document.querySelectorAll('.chip');
+          chips.forEach(chip => {
+                if (chip.textContent.toLowerCase().includes(filter))
+                 {
                     chip.style.display = 'inline-block';
-                } else {
+                 }
+                else
+                 {
                     chip.style.display = 'none';
-                }
+                 }
             });
         });
+
+
+
+    // Populate modal with chips
+});
+
 
 </script>
 </body>

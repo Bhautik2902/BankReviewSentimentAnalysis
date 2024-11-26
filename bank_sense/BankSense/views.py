@@ -30,6 +30,50 @@ model_name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
+from PIL import Image, ImageDraw, ImageFont
+import io
+import base64
+
+
+def generate_no_data_image():
+    try:
+        # Create an empty image with white background
+        img = Image.new('RGB', (400, 200), color=(255, 255, 255))
+        draw = ImageDraw.Draw(img)
+
+        # Add text "No Data Found"
+        text = "No Data Found"
+
+        # Attempt to load a font; fallback to default if unavailable
+        try:
+            font = ImageFont.truetype("arial.ttf", size=20)  # Ensure the font is installed
+        except IOError:
+            font = ImageFont.load_default()
+
+        # Use textbbox instead of textsize
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]  # Right - Left
+        text_height = bbox[3] - bbox[1]  # Bottom - Top
+
+        # Calculate position to center the text
+        position = ((400 - text_width) // 2, (200 - text_height) // 2)
+        draw.text(position, text, fill=(0, 0, 0), font=font)
+
+        # Save the image to a BytesIO buffer
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        # Convert the image buffer to a base64 string
+        img_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        buffer.close()
+
+        return img_base64
+
+    except Exception as e:
+        print(f"Error generating no data image: {e}")
+        return None
+
 
 # Initialize the summarizer pipeline
 # summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
@@ -37,24 +81,30 @@ model = AutoModelForSequenceClassification.from_pretrained(model_name)
 # View to list all reviews
 def dashboard_view(request):
     service_name = request.GET.get('service', None)
-
     bank_name = request.GET.get('bank', 'CIBC')
-
     try:
-        # df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
         json_data = read_json_from_gcs("text-mining-labeled-data", "json_database.json")
         service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
         dict_object = fetch_data_by_bank_and_service(json_data, bank_name, service_name)
 
         if dict_object is not None:
             visuali_data = convert_dict_to_model(dict_object)
-
             positive_wordcloud = create_word_cloud_image(visuali_data.positive_word_list, 'positive')
             negative_wordcloud = create_word_cloud_image(visuali_data.negative_word_list, 'negative')
 
         else:
-            df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
 
+            if service_name not in service_list:
+                print('generating no_data image',generate_no_data_image())
+                return render(request, 'BankSense/index.html', {
+                    'visuali_data': VisualiData(),
+                    'service_list': service_list,
+                    'positive_wordcloud': generate_no_data_image(),
+                    'negative_wordcloud': generate_no_data_image()
+                })
+
+                # if precomputed data is unavailable utilize text-miniing-labeled-data raw file
+            df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
             visuali_data = analyze_service_sentiment(df, bank_name, service_name)
 
             # Refine text for positive and negative word clouds
@@ -64,6 +114,8 @@ def dashboard_view(request):
             # Generate refined word clouds
             positive_wordcloud = generate_word_cloud(positive_text, sentiment='positive')
             negative_wordcloud = generate_word_cloud(negative_text, sentiment='negative')
+
+            #To do: include the code to append  the resultant data to json_database
 
         return render(request, 'BankSense/index.html', {
             'visuali_data': visuali_data,
@@ -75,42 +127,6 @@ def dashboard_view(request):
     except Exception as e:
         print(str(e))
         return render(request, 'BankSense/index.html', {'error': str(e)})
-
-
-stop_words = set(stopwords.words("english"))
-
-
-# Helper function to generate a refined word cloud
-def generate_wordcloud(text, sentiment):
-    # Define stopwords to remove common and unhelpful words
-    common_stopwords = {"the", "and", "to", "in", "it", "is", "this", "that", "with", "for", "on", "as", "was",
-                        "are", "but", "be", "have", "at", "or", "from", "app", "bank", "service", "customer", "one",
-                        "like", "can", "get", "use", "using", "also", "would", "will", "make", "good", "bad"}
-
-    # Tokenize text and filter out stopwords and short words
-    words = re.findall(r'\b\w+\b', text.lower())
-    filtered_words = [word for word in words if word not in common_stopwords and len(word) > 2]
-
-    # Generate the word cloud
-    wordcloud = WordCloud(
-        width=400,
-        height=200,
-        background_color="white",
-        colormap='Greens' if sentiment == 'positive' else 'Reds',  # Green for positive, red for negative
-        max_words=50
-    ).generate(" ".join(filtered_words))
-
-    # Convert the word cloud to a base64 image
-    buffer = BytesIO()
-    plt.figure(figsize=(4, 2))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis("off")
-    plt.savefig(buffer, format="png")
-    buffer.seek(0)
-    image_png = buffer.getvalue()
-    buffer.close()
-    return base64.b64encode(image_png).decode('utf-8')
-
 
 def analyze_service_sentiment(df, bank_name="ALL"):
     visuali_data = VisualiData()
@@ -153,7 +169,6 @@ def analyze_service_sentiment(df, bank_name="ALL"):
 
 
 def analyze_service_sentiment(df, bank_name, service_name=None):
-
     common_st_services = ['Credit', 'Security', 'Online banking', 'Mortgage', 'Fee']
 
     visualidata = VisualiData()
@@ -233,6 +248,7 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
                 except Exception as e:
                     print(e)
 
+
     return visualidata
 
 
@@ -264,12 +280,10 @@ def create_json(request):
         print(e)
 
 
-
 ############################################  utility functions  #######################################################
 
 
 def save_models_to_json_file(models, filename):
-
     model_dicts = [model.to_dict() for model in models]
 
     # Serialize to JSON and write to file
@@ -307,7 +321,6 @@ def read_json_from_gcs(bucket_name, file_path):
     blob = bucket.blob(file_path)
     json_data = blob.download_as_text()
     data = json.loads(json_data)
-    print(type(data))
     return data
 
 
@@ -344,30 +357,39 @@ def generate_word_cloud(text, sentiment):
     # Tokenize text and filter out stopwords and short words
     words = re.findall(r'\b\w+\b', text.lower())
     sentiment_words = []
-    # Initialize progress bar for word processing
-    print("Processing words for sentiment analysis:")
-    for word in tqdm(words, desc="Analyzing", unit="word"):
-        if word not in stop_words and len(word) > 2:
-            # Analyze sentiment of each word using RoBERTa
-            inputs = tokenizer(word, return_tensors="pt")
-            outputs = model(**inputs)
-            scores = torch.softmax(outputs.logits, dim=1).detach().numpy()[0]
-            positive_score, neutral_score, negative_score = scores[2], scores[1], scores[0]
+    if len(sentiment_words) == 0:
+        wordcloud = WordCloud(
+            width=400,
+            height=200,
+            background_color="white",
+            colormap='Greens' if sentiment == 'positive' else 'Reds',
+            max_words=1
+        ).generate("No_Data_Found")
+    else:
+        # Initialize progress bar for word processing
+        print("Processing words for sentiment analysis:")
+        for word in tqdm(words, desc="Analyzing", unit="word"):
+            if word not in stop_words and len(word) > 2:
+                # Analyze sentiment of each word using RoBERTa
+                inputs = tokenizer(word, return_tensors="pt")
+                outputs = model(**inputs)
+                scores = torch.softmax(outputs.logits, dim=1).detach().numpy()[0]
+                positive_score, neutral_score, negative_score = scores[2], scores[1], scores[0]
 
-            # Filter words based on sentiment
-            if sentiment == 'positive' and positive_score > 0.4:
-                sentiment_words.append(word)
-            elif sentiment == 'negative' and negative_score > 0.3:
-                sentiment_words.append(word)
+                # Filter words based on sentiment
+                if sentiment == 'positive' and positive_score > 0.4:
+                    sentiment_words.append(word)
+                elif sentiment == 'negative' and negative_score > 0.3:
+                    sentiment_words.append(word)
 
-    # Generate the word cloud
-    wordcloud = WordCloud(
-        width=400,
-        height=200,
-        background_color="white",
-        colormap='Greens' if sentiment == 'positive' else 'Reds',  # Green for positive, red for negative
-        max_words=50
-    ).generate(" ".join(sentiment_words))
+        # Generate the word cloud
+        wordcloud = WordCloud(
+            width=400,
+            height=200,
+            background_color="white",
+            colormap='Greens' if sentiment == 'positive' else 'Reds',  # Green for positive, red for negative
+            max_words=50
+        ).generate(" ".join(sentiment_words))
 
     # Convert the word cloud to a base64 image
     buffer = BytesIO()
@@ -415,59 +437,90 @@ def generate_word_cloud_keyword_list(text, sentiment):
     return sentiment_words
 
 
-def overall_bank_sentiment_dashboard(request):
-    #print("nltk path: ",nltk.data.path)
-    df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
-    # Step 1: Map sentiment strings to numerical values
-    df["sentiment_score"] = df["predicted_sentiment"].map({"positive": 1, "neutral": 0, "negative": -1})
-
-    aggregated_data = (
-        df.groupby(["bank"])
-        .agg(
-            total_reviews=("sentiment_score", "size"),
-            avg_sentiment=("sentiment_score", "mean"),
-            positive_count=("predicted_sentiment", lambda x: (x == "positive").sum()),
-            neutral_count=("predicted_sentiment", lambda x: (x == "neutral").sum()),
-            negative_count=("predicted_sentiment", lambda x: (x == "negative").sum())
-        )
-        .nlargest(5, "total_reviews")
-        .reset_index()
-    )
-
-    top_positive_reviews = (
-        df[df["predicted_sentiment"] == "positive"]
-        .sort_values(by="rating", ascending=False)
-        .head(3)  # Adjust as needed for more or fewer reviews
-    )
-    top_negative_reviews = (
-        df[df["predicted_sentiment"] == "negative"]
-        .sort_values(by="rating", ascending=True)
-        .head(3)  # Adjust as needed for more or fewer reviews
-    )
-    top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
-    top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
-    positive_wordcloud = generate_word_cloud(top_positive_reviews_text,sentiment='positive')
-    negative_wordcloud = generate_word_cloud(top_negative_reviews_text,sentiment='negative')
-
-    # Convert the aggregated data to a dictionary format for the template
-    aggregated_data_json = aggregated_data.to_dict(orient="records")
-    service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
-
-    # get all bank names
-    service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
-
-    # Pass the data as context to the template
-    context = {
-        "aggregated_data": aggregated_data_json,
-        "top_positive_reviews": top_positive_reviews_text,
-        "top_negative_reviews": top_negative_reviews_text,
-        "service_list": service_list,
-        "positive_wordcloud": positive_wordcloud,
-        "negative_wordcloud": negative_wordcloud,
+def fetch_data_all_bank_services(json_data):
+    aggregated_data = {
+        "positive_wordcloud": [],
+        "negative_wordcloud": [],
     }
-    return render(request, 'BankSense/index_temp.html', context)
+    for entry in json_data:
+        bank = entry.get('bank_name')
+        if bank not in aggregated_data:
+            aggregated_data[bank] = {
+                "total_reviews": 0,
+                "avg_sentiment": 0,
+                "positive_count": 0,
+                "negative_count": 0,
+                "neutral_count": 0,
+
+            }
+            aggregated_data[bank]["total_reviews"] += entry["total_reviews"]
+            aggregated_data[bank]["avg_sentiment"] = 0
+            aggregated_data[bank]["positive_count"] += entry["pos_count"]
+            aggregated_data[bank]["negative_count"] += entry["neg_count"]
+            aggregated_data[bank]["neutral_count"] += entry["neu_count"]
+            aggregated_data["positive_wordcloud"] += entry.get("positive_word_list", [])
+            aggregated_data["negative_wordcloud"] += entry.get("negative_word_list", [])
+
+    aggregated_data["positive_wordcloud"] = create_word_cloud_image(aggregated_data["positive_wordcloud"], 'positive')
+    aggregated_data["negative_wordcloud"] = create_word_cloud_image(aggregated_data["negative_wordcloud"], 'negative')
+
+    return aggregated_data
 
 
+def overall_bank_sentiment_dashboard(request):
+
+    # get all bank service names
+    service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
+    # get all preprocessed banking details
+    json_data = read_json_from_gcs("text-mining-labeled-data", "json_database.json")
+    if json_data is not None:
+        aggregated_data_json = fetch_data_all_bank_services(json_data)
+        context = {
+            "aggregated_data": aggregated_data_json,
+            "service_list": service_list,
+        }
+        return render(request, 'BankSense/index_temp.html', context)
+
+    else:
+        # Extract from data from raw text0mining-labeled-data file and process it
+        df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
+        aggregated_data = (
+            df.groupby(["bank"])
+            .agg(
+                total_reviews=("sentiment_score", "size"),
+                avg_sentiment=("sentiment_score", "mean"),
+                positive_count=("predicted_sentiment", lambda x: (x == "positive").sum()),
+                neutral_count=("predicted_sentiment", lambda x: (x == "neutral").sum()),
+                negative_count=("predicted_sentiment", lambda x: (x == "negative").sum())
+            )
+            .nlargest(5, "total_reviews")
+            .reset_index()
+        )
+
+        top_positive_reviews = (
+            df[df["predicted_sentiment"] == "positive"]
+            .sort_values(by="rating", ascending=False)
+            .head(3)  # Adjust as needed for more or fewer reviews
+        )
+        top_negative_reviews = (
+            df[df["predicted_sentiment"] == "negative"]
+            .sort_values(by="rating", ascending=True)
+            .head(3)  # Adjust as needed for more or fewer reviews
+        )
+        top_positive_reviews_text = " ".join(top_positive_reviews["review_text"])
+        top_negative_reviews_text = " ".join(top_negative_reviews["review_text"])
+        positive_wordcloud = generate_word_cloud(top_positive_reviews_text, sentiment='positive')
+        negative_wordcloud = generate_word_cloud(top_negative_reviews_text, sentiment='negative')
+        # Convert the aggregated data to a dictionary format for the template
+        aggregated_data_json = aggregated_data.to_dict(orient="records")
+        service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
+        context = {
+            "aggregated_data": aggregated_data_json,
+            "service_list": service_list,
+            "positive_wordcloud": positive_wordcloud,
+            "negative_wordcloud": negative_wordcloud,
+        }
+        return render(request, 'BankSense/index_temp.html', context)
 def summarize_reviews(reviews):
     # Initialize the summarization pipeline
     summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
@@ -564,14 +617,22 @@ def create_word_cloud_image(sentiment_words, sentiment):
         word for word in sentiment_words
         if word not in offensive_words
     ]
-
-    wordcloud = WordCloud(
-        width=400,
-        height=200,
-        background_color="white",
-        colormap='Greens' if sentiment == 'positive' else 'Reds',
-        max_words=50
-    ).generate(" ".join(sentiment_words))
+    if len(sentiment_words) == 0:
+        wordcloud = WordCloud(
+            width=400,
+            height=200,
+            background_color="white",
+            colormap='Greens' if sentiment == 'positive' else 'Reds',
+            max_words=50
+        ).generate("No Data Found")
+    else:
+        wordcloud = WordCloud(
+            width=400,
+            height=200,
+            background_color="white",
+            colormap='Greens' if sentiment == 'positive' else 'Reds',
+            max_words=50
+        ).generate(" ".join(sentiment_words))
 
     # Convert the word cloud to a base64 image
     buffer = BytesIO()

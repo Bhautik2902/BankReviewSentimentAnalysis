@@ -227,7 +227,7 @@
         <nav class="col-md-2 d-none d-md-block bg-light sidebar">
             <div class="text-center mb-4">
                 <a href ="{% url 'BankSense:overview_dashboard' %}">
-                    <img src="{% static 'BankSense/banksense_logo.png' %}" alt="Website Logo" class="img-fluid" style="width: 200px; height:60px">
+                    <img src="{% static 'BankSense/banksense_logo.png' %}" alt="Website Logo" id="logo" class="img-fluid" style="width: 200px; height:60px" >
                 </a>
             </div>
 
@@ -346,7 +346,58 @@
 </div>
 
 <script>
+ const handleLogoClick= async (event)=>
+  {
+       const entireWindow = document.body;
+       if(!entireWindow)
+        {
+            console.error('Body element not found.');
+            return;
+        }
+       const existingSpinner = document.querySelector('.loading-spinner');
+       console.log('existing spinner: ',existingSpinner);
+       if(existingSpinner)
+        {
+          existingSpinner.remove();
+        }
+     const spinner = document.createElement('div');
+     spinner.className = 'loading-spinner';
+     spinner.innerHTML = '<div class="spinner"></div>'; // This will hold the spinner
+     spinner.style.position = 'absolute'; // Position it inside the chip
+     spinner.style.top = '50%';
+     spinner.style.left = '50%';
+     spinner.style.transform = 'translate(-50%, -50%)';
+     spinner.style.zIndex = '9999'; // Ensure it is above the chip's content
+     entireWindow.style.position = 'relative';
+     entireWindow.appendChild(spinner);
+     console.log("spinner:",spinner);
 
+     const logo_select = event.target.closest('a');
+     const url = logo_select.href;
+     try
+      {
+       const response = await fetch(url, { method: 'GET' });
+       if (!response.ok)
+        {
+          throw new Error('Network response was not ok');
+        }
+       const html = await response.text();
+       console.log('HTML content received');
+       //spinner.remove(); // Remove spinner after loading
+      }
+     catch(error)
+      {
+       console.error('Error during async operation:', error);
+       spinner.remove();
+      }
+     finally
+      {
+      //Wait for the DOMContentLoaded event to ensure the content has been fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+        spinner.remove(); // Remove spinner after the new content is ready
+      });
+    }
+  }
   const handleBankClick =async (event) =>
    {
      console.log("inside handle bank click");
@@ -446,6 +497,12 @@
       });
     }
 };
+function removeSpinner() {
+    const existingSpinner = document.querySelector('.loading-spinner');
+    if (existingSpinner) {
+      existingSpinner.remove();
+    }
+  }
 
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -458,6 +515,12 @@ const dropdownItems = document.querySelectorAll('.dropdown-item');
 dropdownItems.forEach((item) => {
 item.addEventListener('click', handleBankClick);
     });
+
+logo = document.getElementById('logo')
+logo.addEventListener('click',handleLogoClick)
+  window.addEventListener('popstate', () => {
+    removeSpinner();
+  });
 // Initialize the sentiment bar chart
 var sentimentChart = new Chart(document.getElementById('sentimentChart').getContext('2d'), {
       type: 'bar',
