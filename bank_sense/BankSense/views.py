@@ -21,14 +21,14 @@ from .models import Review, VisualiData, ServiceModel
 from django.http import JsonResponse
 import io
 from google.cloud import storage
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+# from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 from nltk.corpus import stopwords, wordnet
-import torch
+# import torch
 from tqdm import tqdm
 
 model_name = "cardiffnlp/twitter-roberta-base-sentiment-latest"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
+# tokenizer = AutoTokenizer.from_pretrained(model_name)
+# model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
 from PIL import Image, ImageDraw, ImageFont
 import io
@@ -353,6 +353,7 @@ def preprocess_text(text, stop_words):
 
 
 def generate_word_cloud(text, sentiment):
+    """
     # Ensure stopwords are loaded
     stop_words = set(stopwords.words('english'))
 
@@ -382,9 +383,9 @@ def generate_word_cloud(text, sentiment):
         for word in tqdm(words, desc="Analyzing", unit="word"):
             if word not in stop_words and len(word) > 2:
                 # Analyze sentiment of each word using RoBERTa
-                inputs = tokenizer(word, return_tensors="pt")
-                outputs = model(**inputs)
-                scores = torch.softmax(outputs.logits, dim=1).detach().numpy()[0]
+                # inputs = tokenizer(word, return_tensors="pt")
+                # outputs = model(**inputs)
+                # scores = torch.softmax(outputs.logits, dim=1).detach().numpy()[0]
                 positive_score, neutral_score, negative_score = scores[2], scores[1], scores[0]
 
                 # Filter words based on sentiment
@@ -412,9 +413,12 @@ def generate_word_cloud(text, sentiment):
     image_png = buffer.getvalue()
     buffer.close()
     return base64.b64encode(image_png).decode('utf-8')
+    """
+    return None
 
 
 def generate_word_cloud_keyword_list(text, sentiment):
+    """
     # Ensure stopwords are loaded
     stop_words = set(stopwords.words('english'))
 
@@ -446,7 +450,8 @@ def generate_word_cloud_keyword_list(text, sentiment):
                 sentiment_words.append(word)
 
     return sentiment_words
-
+    """
+    return None
 
 def fetch_data_all_bank_services(json_data):
     aggregated_data = {
@@ -533,6 +538,7 @@ def overall_bank_sentiment_dashboard(request):
         }
         return render(request, 'BankSense/index_temp.html', context)
 def summarize_reviews(reviews):
+    """
     # Initialize the summarization pipeline
     summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
@@ -543,9 +549,11 @@ def summarize_reviews(reviews):
             reviews[i] = summary[0]['summary_text']
 
     return reviews
-
+    """
+    return None
 
 def extract_sentiment_keywords(text, threshold=0.5):
+    """
     positive_keywords = []
     negative_keywords = []
 
@@ -566,7 +574,8 @@ def extract_sentiment_keywords(text, threshold=0.5):
             negative_keywords.append(word)
 
     return set(positive_keywords), set(negative_keywords)
-
+    """
+    return None
 
 def convert_dict_to_model(data):
     visuali_data = VisualiData()
