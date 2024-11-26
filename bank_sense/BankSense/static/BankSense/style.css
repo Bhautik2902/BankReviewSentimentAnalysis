@@ -1,13 +1,8 @@
-/* Custom styles for the dashboard */
-
-body {
-    font-family: 'Roboto', sans-serif;
-}
-
 .sidebar {
     height: 100vh;
     background-color: #f8f9fa;
     border-right: 1px solid #dee2e6;
+    padding-top: 20px;
 }
 
 .sidebar .nav-link {
@@ -16,7 +11,14 @@ body {
 }
 
 .main-content {
-    margin-left: 250px;
+    margin-left: 220px;
+    padding: 20px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
 }
 
 .sentiment-score h1 {
@@ -25,41 +27,152 @@ body {
 }
 
 .sentiment-legend span {
-    margin: 5px;
+    margin-right: 10px;
 }
 
-.navbar-brand {
-    padding-left: 20px;
+.card-insights {
+    border: 1px solid #e0e0e0;
+    padding: 20px;
+    margin-bottom: 20px;
 }
 
-.navbar-brand img {
-    width: 150px;
+.card-insights h5 {
+    margin-bottom: 15px;
+    font-weight: bold;
 }
 
-.dropdown .rounded-circle {
-    width: 40px;
-    height: 40px;
-    margin-right: 8px;
-}
-
-.dropdown-toggle {
+.dropdown-avatar {
     display: flex;
     align-items: center;
 }
 
-/* Adjust search bar width and dropdown position */
-.d-flex .input-group {
-    max-width: 600px;  /* Adjust the maximum width of the search bar */
+.dropdown-avatar img {
+    margin-right: 10px;
 }
 
-.d-flex .dropdown {
-    max-width: 150px;  /* Set a smaller max-width for the dropdown */
+.custom-dropdown-width {
+    width: auto;
 }
 
-.input-group .form-control {
-    width: 100%;  /* Make the input element fully utilize the input-group space */
+.chip {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    color: #1565C0; /* Text color */
+    background-color: #E3F2FD; /* Light blue background */
+    border-radius: 20px; /* Rounded corners */
+    border: 1px solid transparent;
+    text-align: center;
+    cursor: pointer;
+    margin: .2rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
-.d-flex .input-group button {
-    flex-grow: 0;
+.chip:hover {
+    background-color: #BBDEFB; /* Slightly darker background on hover */
+    border-color: #90CAF9; /* Slight border change on hover */
+}
+
+.chip:active {
+    background-color: #1565C0; /* Darker background when clicked */
+    color: white; /* White text when clicked */
+}
+
+.custom-modal-width {
+    max-width: 60%; /* Change this value to adjust the width */
+}
+
+.chip-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.chip {
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #1565C0; /* Text color */
+    background-color: #E3F2FD; /* Light blue background */
+    border-radius: 20px;
+    border: 1px solid transparent;
+    text-align: center;
+    display: inline-block;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.chip:hover {
+    background-color: #BBDEFB;
+    border-color: #90CAF9;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-service-name, .h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.separator {
+    width: 1px;
+    height: 24px;
+    background-color: #333;
+}
+
+.overall-sentiment-strip {
+    width: 100%;
+    margin-top: 15px;
+    background: linear-gradient(90deg, #f9f9f9 0%, #f1f1f1 100%);
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+}
+
+.overall-sentiment-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #000;
+}
+
+.overall-sentiment-counts {
+    display: flex;
+    margin-left: 2rem;
+    gap: 10px;
+}
+
+.overall-sentiment-badge {
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    border-radius: 20px;
+    text-align: center;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.overall-sentiment-badge.positive {
+    background-color: #28a745; /* Green */
+}
+
+.overall-sentiment-badge.neutral {
+    background-color: #ffc107; /* Yellow */
+    color: #000;
+}
+
+.overall-sentiment-badge.negative {
+    background-color: #dc3545; /* Red */
+}
+
+.text-center {
+    text-align: center;
 }

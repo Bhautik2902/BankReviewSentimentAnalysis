@@ -1,4 +1,6 @@
 {% load static %}
+{% load custom_filter %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,157 +66,496 @@
         .dropdown-avatar img {
             margin-right: 10px;
         }
+
+        .custom-dropdown-width {
+            width: auto;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            color: #1565C0; /* Text color */
+            background-color: #E3F2FD; /* Light blue background */
+            border-radius: 20px; /* Rounded corners */
+            border: 1px solid transparent;
+            text-align: center;
+            cursor: pointer;
+            margin: .2rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .chip:hover {
+            background-color: #BBDEFB; /* Slightly darker background on hover */
+            border-color: #90CAF9; /* Slight border change on hover */
+        }
+
+        .chip:active {
+            background-color: #1565C0; /* Darker background when clicked */
+            color: white; /* White text when clicked */
+        }
+
+        .custom-modal-width {
+            max-width: 60%; /* Change this value to adjust the width */
+        }
+        .chip-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        }
+        .chip {
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #1565C0; /* Text color */
+            background-color: #E3F2FD; /* Light blue background */
+            border-radius: 20px;
+            border: 1px solid transparent;
+            text-align: center;
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .chip:hover {
+            background-color: #BBDEFB;
+            border-color: #90CAF9;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-service-name, .h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .separator {
+            width: 1px;
+            height: 24px;
+            background-color: #333;
+        }
+  .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 2s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: block; /* Temporarily show the spinner */
+    background-color: rgba(255, 255, 255, 0.8); /* Add background for testing */
+}
+  #loading-spinner {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+/* Spin animation */
+@keyframes spin
+   {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+   }
+
+        .overall-sentiment-strip {
+            width: 100%;
+            margin-top: 15px;
+            background: linear-gradient(90deg, #f9f9f9 0%, #f1f1f1 100%);
+            display: flex;
+            justify-content: left;
+            align-items: center;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
+        }
+
+        .overall-sentiment-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .overall-sentiment-counts {
+            display: flex;
+            margin-left: 2rem;
+            gap: 10px;
+        }
+
+        .overall-sentiment-badge {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 20px;
+            text-align: center;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .overall-sentiment-badge.positive {
+            background-color: #28a745; /* Green */
+        }
+
+        .overall-sentiment-badge.neutral {
+            background-color: #ffc107; /* Yellow */
+            color: #000;
+        }
+
+        .overall-sentiment-badge.negative {
+            background-color: #dc3545; /* Red */
+        }
+
+        .text-center {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar -->
         <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-            <div class="text-center my-3">
-                <img src="{% static 'images/logo.png' %}" alt="Website Logo" class="img-fluid" style="max-width: 120px;">
+            <div class="text-center mb-4">
+                <a href ="{% url 'BankSense:overview_dashboard' %}">
+                    <img src="{% static 'BankSense/banksense_logo.png' %}" alt="Website Logo" id="logo" class="img-fluid" style="width: 200px; height:60px" >
+                </a>
             </div>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Customer Review</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Settings</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Help</a>
-                </li>
-            </ul>
+
+            <div class="d-grid gap-4">
+                 <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle custom-dropdown-width" type="button" data-bs-toggle="dropdown">
+                        {{ visuali_data.bank_name }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/overview">ALL</a></li>
+                        <li><a class="dropdown-item" href="?bank=CIBC">CIBC</a></li>
+                        <li><a class="dropdown-item" href="?bank=RBC">RBC</a></li>
+                        <li><a class="dropdown-item" href="?bank=Scotiabank">Scotiabank</a></li>
+                        <li><a class="dropdown-item" href="?bank=TD">TD</a></li>
+                        <li><a class="dropdown-item" href="?bank=BMO">BMO</a></li>
+                        <li><a class="dropdown-item" href="?bank=NBC">NBC</a></li>
+                    </ul>
+                </div>
+
+                <div class="input-group me-1">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#browseServicesModal">
+                        Browse bank services
+                    </button>
+                </div>
+            </div>
         </nav>
+
+        <div id="loading-spinner" style="display: none">
+            <div class="spinner"></div>
+        </div>
 
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-start align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <div style="margin-right: 2rem">
-                    <!-- Dynamic bank name and review count -->
-                    <h1 class="h2">{{ visuali_data.bank_name }}</h1>
-                    <p class="text-muted">Total Reviews: {{ visuali_data.total_reviews }}</p>
+                   <div class="header-content">
+                        <h1 class="h2">{{ visuali_data.bank_name }}</h1>
+                        <div class="separator"></div>
+
+                        {% if visuali_data.searched_st_service %}
+                            <h1 class="header-service-name">{{ visuali_data.searched_st_service }}</h1>
+                        {% else %}
+                            <h1 class="header-service-name">Credit, Security, Online banking, Mortgage, Fee</h1>
+                        {% endif %}
+                    </div>
+                    {% if visuali_data.searched_st_service %}
+                        <p style="margin-top: 10px; font-size: 1rem">Total Reviews: {{ visuali_data.common_services.0.pos_count|add:visuali_data.common_services.0.neg_count|add:visuali_data.common_services.0.neu_count }}</p>
+                    {% else %}
+                        <p style="margin-top: 10px; font-size: 1rem">Total Reviews: {{ visuali_data.total_reviews }}</p>
+                    {% endif %}
                 </div>
 
-                <div class="d-flex">
-                    <!-- Search bar and dropdown -->
-                    <div class="input-group me-1">
-                        <input type="text" class="form-control" placeholder="Know More About your Bank" style="width: 30rem">
-                        <button type="button" class="btn btn-outline-secondary">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            {{ visuali_data.bank_name }}
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="?bank=CIBC">CIBC</a></li>
-                            <li><a class="dropdown-item" href="?bank=RBC">RBC</a></li>
-                            <li><a class="dropdown-item" href="?bank=Scotiabank">Scotiabank</a></li>
-                            <li><a class="dropdown-item" href="?bank=TD">TD</a></li>
-                            <li><a class="dropdown-item" href="?bank=BMO">BMO</a></li>
-                            <li><a class="dropdown-item" href="?bank=NBC">NBC</a></li>
-                        </ul>
-                    </div>
-                </div>
             </div>
 
             <!-- Charts Section -->
             <div class="row">
-                <div class="col-lg-8">
-                    <h5>Banking Sentiment Breakdown: Positive, Neutral, and Negative by Service</h5>
+                <div class="col-lg-8" style="align-content: center">
                     <canvas id="sentimentChart"></canvas>
+                    <h6 class="text-center">Banking Sentiment Breakdown: Positive, Neutral, and Negative by Service</h6>
                 </div>
                 <div class="col-lg-4 text-center">
-                    <h5>Overall Rating</h5>
+                    {% if visuali_data.searched_st_service %}
+                        <h5>Positive reviews for this service in other banks</h5>
+                    {% else %}
+                        <h5>Overall Rating</h5>
+                    {% endif %}
                     <div class="sentiment-score">
                         <h1>{{ visuali_data.overall_rating|floatformat:1 }}</h1>
-                        <canvas id="ratingDonutChart" width="150" height="150"></canvas>
+                        <canvas id="ratingDonutChart" width="120" height="120"></canvas>
                     </div>
-                    <p>Total Reviews: {{ visuali_data.total_reviews }}</p>
-                    <div class="sentiment-legend">
-                        <span class="badge bg-success">Positive {{ visuali_data.pos_count }}</span>
-                        <span class="badge bg-warning">Neutral {{ visuali_data.neu_count }}</span>
-                        <span class="badge bg-danger">Negative {{ visuali_data.neg_count }}</span>
-                    </div>
+
+                </div>
+            </div>
+
+            <div class="overall-sentiment-strip">
+                <div class="overall-sentiment-title">Overall sentiment count for this bank</div>
+                <div class="overall-sentiment-counts">
+                    <span class="overall-sentiment-badge positive">{{ visuali_data.pos_count }}</span>
+                    <span class="overall-sentiment-badge neutral">{{ visuali_data.neu_count }}</span>
+                    <span class="overall-sentiment-badge negative">{{ visuali_data.neg_count }}</span>
                 </div>
             </div>
 
             <!-- Insights Section -->
             <div class="row mt-4">
-                <div class="col-lg-6 card-insights">
-                    <h5>Positive Insights</h5>
-                    <ul>
-                        {% for review in visuali_data.positive_reviews %}
-                        <li>{{ review }}</li>
-                        {% endfor %}
-                    </ul>
+                <div class="col-lg-6 card-insights text-center">
+                    <h5>Positive Word Cloud</h5>
+                    <img src="data:image/png;base64,{{ positive_wordcloud }}" alt="Positive Word Cloud" class="img-fluid" />
                 </div>
-                <div class="col-lg-6 card-insights">
-                    <h5>Negative Insights</h5>
-                    <ul>
-                        {% for review in visuali_data.negative_reviews %}
-                        <li>{{ review }}</li>
-                        {% endfor %}
-                    </ul>
+                <div class="col-lg-6 card-insights text-center">
+                    <h5>Negative Word Cloud</h5>
+                    <img src="data:image/png;base64,{{ negative_wordcloud }}" alt="Negative Word Cloud" class="img-fluid" />
                 </div>
             </div>
+
         </main>
+    </div>
+
+    <!-- Banking Services Modal -->
+    <div class="modal fade" id="browseServicesModal" tabindex="-1" aria-labelledby="browseServicesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable custom-modal-width">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="browseServicesLabel">Browse more banking services</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control mb-3" id="searchInput" placeholder="Search for label">
+                    <div id="chipContainer">
+                        <!-- chips will be added dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Initialize the sentiment bar chart
-        var sentimentChart = new Chart(document.getElementById('sentimentChart').getContext('2d'), {
-            type: 'bar',
+ const handleLogoClick= async (event)=>
+  {
+       const entireWindow = document.body;
+       if(!entireWindow)
+        {
+            console.error('Body element not found.');
+            return;
+        }
+       const existingSpinner = document.querySelector('.loading-spinner');
+       console.log('existing spinner: ',existingSpinner);
+       if(existingSpinner)
+        {
+          existingSpinner.remove();
+        }
+     const spinner = document.createElement('div');
+     spinner.className = 'loading-spinner';
+     spinner.innerHTML = '<div class="spinner"></div>'; // This will hold the spinner
+     spinner.style.position = 'absolute'; // Position it inside the chip
+     spinner.style.top = '50%';
+     spinner.style.left = '50%';
+     spinner.style.transform = 'translate(-50%, -50%)';
+     spinner.style.zIndex = '9999'; // Ensure it is above the chip's content
+     entireWindow.style.position = 'relative';
+     entireWindow.appendChild(spinner);
+     console.log("spinner:",spinner);
+
+     const logo_select = event.target.closest('a');
+     const url = logo_select.href;
+     try
+      {
+       const response = await fetch(url, { method: 'GET' });
+       if (!response.ok)
+        {
+          throw new Error('Network response was not ok');
+        }
+       const html = await response.text();
+       console.log('HTML content received');
+       //spinner.remove(); // Remove spinner after loading
+      }
+     catch(error)
+      {
+       console.error('Error during async operation:', error);
+       spinner.remove();
+      }
+     finally
+      {
+      //Wait for the DOMContentLoaded event to ensure the content has been fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+        spinner.remove(); // Remove spinner after the new content is ready
+      });
+    }
+  }
+  const handleBankClick =async (event) =>
+   {
+     console.log("inside handle bank click");
+     const entireWindow = document.body;
+     if(!entireWindow)
+      {
+        console.error('Body element not found.');
+        return;
+      }
+     console.log('entire window',entireWindow);
+     const existingSpinner = document.querySelector('.loading-spinner');
+     console.log('existing spinner: ',existingSpinner);
+     if(existingSpinner)
+       {
+        existingSpinner.remove();
+       }
+     const spinner = document.createElement('div');
+     spinner.className = 'loading-spinner';
+     spinner.innerHTML = '<div class="spinner"></div>'; // This will hold the spinner
+     spinner.style.position = 'absolute'; // Position it inside the chip
+     spinner.style.top = '50%';
+     spinner.style.left = '50%';
+     spinner.style.transform = 'translate(-50%, -50%)';
+     spinner.style.zIndex = '9999'; // Ensure it is above the chip's content
+     entireWindow.style.position = 'relative';
+     entireWindow.appendChild(spinner);
+     console.log("spinner:",spinner);
+     const bank_select = event.target.closest('a');
+     const url = bank_select.href;
+     try
+      {
+       const response = await fetch(url, { method: 'GET' });
+       if (!response.ok)
+        {
+          throw new Error('Network response was not ok');
+        }
+       const html = await response.text();
+       console.log('HTML content received');
+       //spinner.remove(); // Remove spinner after loading
+      }
+     catch(error)
+      {
+       console.error('Error during async operation:', error);
+       spinner.remove();
+      }
+     finally
+      {
+      //Wait for the DOMContentLoaded event to ensure the content has been fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+        spinner.remove(); // Remove spinner after the new content is ready
+      });
+    }
+   };
+
+  const handleChipClick = async (event) => {
+  const chipContainer = document.getElementById('chipContainer');
+  const existingSpinner = document.querySelector('.loading-spinner');
+  if (existingSpinner)
+   {
+     existingSpinner.remove(); // Remove any existing spinner
+   }
+  const spinner = document.createElement('div');
+  spinner.className = 'loading-spinner';
+  spinner.innerHTML = '<div class="spinner"></div>'; // This will hold the spinner
+  spinner.style.position = 'absolute'; // Position it inside the chip
+  spinner.style.top = '50%';
+  spinner.style.left = '50%';
+  spinner.style.transform = 'translate(-50%, -50%)';
+  spinner.style.zIndex = '9999'; // Ensure it is above the chip's content
+  chipContainer.style.position = 'relative';
+  chipContainer.appendChild(spinner);
+  const chip = event.target.closest('.chip');
+  const link = chip.querySelector('a');
+  const url = link.href;
+
+  try
+    {
+       const response = await fetch(url, { method: 'GET' });
+       if (!response.ok)
+        {
+          throw new Error('Network response was not ok');
+        }
+       const html = await response.text();
+       console.log('HTML content received');
+       //spinner.remove(); // Remove spinner after loading
+    }
+  catch(error)
+    {
+       console.error('Error during async operation:', error);
+       spinner.remove();
+    }
+  finally
+    {
+      //Wait for the DOMContentLoaded event to ensure the content has been fully loaded
+       window.addEventListener('DOMContentLoaded', () => {
+       spinner.remove(); // Remove spinner after the new content is ready
+      });
+    }
+};
+function removeSpinner() {
+    const existingSpinner = document.querySelector('.loading-spinner');
+    if (existingSpinner) {
+      existingSpinner.remove();
+    }
+  }
+
+
+document.addEventListener('DOMContentLoaded', function () {
+const spinner = document.getElementById("loading-spinner");
+if (spinner)
+  {
+    spinner.style.display = "none";
+  }
+const dropdownItems = document.querySelectorAll('.dropdown-item');
+dropdownItems.forEach((item) => {
+item.addEventListener('click', handleBankClick);
+    });
+
+logo = document.getElementById('logo')
+logo.addEventListener('click',handleLogoClick)
+  window.addEventListener('popstate', () => {
+    removeSpinner();
+  });
+// Initialize the sentiment bar chart
+var sentimentChart = new Chart(document.getElementById('sentimentChart').getContext('2d'), {
+      type: 'bar',
             data: {
-                labels: ['Credit', 'Security', 'Online banking', 'Mortgage', 'Fee'],
+                labels: [
+                    {% for service in visuali_data.common_services %}
+                        "{{ service.name }}"{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
                 datasets: [
                     {
                         label: 'Positive',
                         backgroundColor: 'green',
                         data: [
-                            {{ visuali_data.common_services.0.pos_count }},
-                            {{ visuali_data.common_services.1.pos_count }},
-                            {{ visuali_data.common_services.2.pos_count }},
-                            {{ visuali_data.common_services.3.pos_count }},
-                            {{ visuali_data.common_services.4.pos_count }}
+                            {% for service in visuali_data.common_services %}
+                                {{ service.pos_count }}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
                         ]
                     },
                     {
                         label: 'Neutral',
                         backgroundColor: 'yellow',
                         data: [
-                            {{ visuali_data.common_services.0.neu_count }},
-                            {{ visuali_data.common_services.1.neu_count }},
-                            {{ visuali_data.common_services.2.neu_count }},
-                            {{ visuali_data.common_services.3.neu_count }},
-                            {{ visuali_data.common_services.4.neu_count }}
+                           {% for service in visuali_data.common_services %}
+                                {{ service.neu_count }}{% if not forloop.last %},{% endif %}
+                           {% endfor %}
                         ]
                     },
                     {
                         label: 'Negative',
                         backgroundColor: 'red',
                         data: [
-                            {{ visuali_data.common_services.0.neg_count }},
-                            {{ visuali_data.common_services.1.neg_count }},
-                            {{ visuali_data.common_services.2.neg_count }},
-                            {{ visuali_data.common_services.3.neg_count }},
-                            {{ visuali_data.common_services.4.neg_count }}
+                            {% for service in visuali_data.common_services %}
+                                {{ service.neg_count }}{% if not forloop.last %},{% endif %}
+                            {% endfor %}
                         ]
                     }
                 ]
@@ -224,25 +565,183 @@
                 scales: {
                     x: { beginAtZero: true },
                     y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const index = context.dataIndex;
+                                const label = context.chart.data.labels[index];
+
+                                const datasets = context.chart.data.datasets;
+                            }
+                        }
+                    }
+                }
+            }
+         });
+
+        // Get banks from Django variable
+        const banks = [
+            {% for bank in visuali_data.curr_bank_list %}
+                "{{ bank }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        {# when bank name with specific service has been selected #}
+        {% if visuali_data.searched_st_service %}
+            const ctx = document.getElementById('ratingDonutChart').getContext('2d');
+            const myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: banks,
+                datasets: [
+                    {
+                        label: 'Positive Reviews',
+                        data: [
+                            {% for bank in visuali_data.curr_bank_list %}
+                                "{{ visuali_data.pos_service_at_other_banks|dict_key:bank }}"{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ],
+                        backgroundColor: 'green',
+                        borderColor: 'green',
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        barThickness: 15
+                    },
+                    {
+                        label: 'Neutral Reviews',
+                        data: [
+                            {% for bank in visuali_data.curr_bank_list %}
+                                "{{ visuali_data.neu_service_at_other_banks|dict_key:bank }}"{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ],
+                        backgroundColor: 'yellow',
+                        borderColor: 'yellow',
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        barThickness: 15
+                    },
+                    {
+                        label: 'Negative Reviews',
+                        data: [
+                            {% for bank in visuali_data.curr_bank_list %}
+                                "{{ visuali_data.neg_service_at_other_banks|dict_key:bank }}"{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        ],
+                        backgroundColor: 'red',
+                        borderColor: 'red',
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        barThickness: 15
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: {{ visuali_data.neg_service_at_other_banks|get_max|nearest_greater_multiple_of_10|add:20 }}, {# find max value and add some margin #}
+                        title: {
+                            display: true,
+                            text: 'Number of Positive Reviews',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: '#333'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const associatedBank = context.chart.data.labels[context.dataIndex];
+                                const other_bank_total = {{ visuali_data.other_banks_total|safe }}
+
+                                const total = other_bank_total[associatedBank]
+                                const percentage = ((value / total) * 100).toFixed(2);
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
                 }
             }
         });
+        {% else %}         {#when just bank name is selected#}
+           // Initialize the donut chart
+            var donutChart = new Chart(document.getElementById('ratingDonutChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Neutral', 'Negative'],
+                    datasets: [{
+                        data: [{{ visuali_data.pos_count }}, {{ visuali_data.neu_count }}, {{ visuali_data.neg_count }}],
+                        backgroundColor: ['green', 'yellow', 'red']
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        {% endif %}
 
-        // Initialize the donut chart
-        var donutChart = new Chart(document.getElementById('ratingDonutChart').getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Positive', 'Neutral', 'Negative'],
-                datasets: [{
-                    data: [{{ visuali_data.pos_count }}, {{ visuali_data.neu_count }}, {{ visuali_data.neg_count }}],
-                    backgroundColor: ['green', 'yellow', 'red']
-                }]
-            },
-            options: {
-                responsive: true
-            }
+        const services = [
+            {% for service in service_list %}
+                "{{ service }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const chipContainer = document.getElementById('chipContainer');
+
+        // Populate modal with chips
+        services.forEach(service => {
+            const chip = document.createElement('div');
+            chip.className = 'chip';
+
+            // Create the anchor tag
+            const link = document.createElement('a');
+            link.href = `?service=${encodeURIComponent(service.replace(/\s+/g, '-'))}&bank={{ visuali_data.bank_name }}`;
+
+            link.textContent = service;
+            link.style.textDecoration = 'none';
+            link.style.color = 'inherit';
+
+            // Append the anchor to the chip div
+            chip.appendChild(link);
+            chip.addEventListener('click', handleChipClick);
+            // Append the chip to the container
+            chipContainer.appendChild(chip);
+        });
+
+        // Filter chips based on search input
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', function() {
+            const filter = searchInput.value.toLowerCase();
+            const chips = document.querySelectorAll('.chip');
+            chips.forEach(chip => {
+                if (chip.textContent.toLowerCase().includes(filter)) {
+                    chip.style.display = 'inline-block';
+                } else {
+                    chip.style.display = 'none';
+                }
+            });
         });
     });
 </script>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>

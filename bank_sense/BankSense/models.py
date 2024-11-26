@@ -26,6 +26,14 @@ class ServiceModel:
         self.neg_count = 0
         self.neu_count = 0
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "pos_count": self.pos_count,
+            "neg_count": self.neg_count,
+            "neu_count": self.neu_count
+        }
+
 
 class VisualiData:
     def __init__(self):
@@ -42,25 +50,33 @@ class VisualiData:
         self.pos_count = 0
         self.neg_count = 0
         self.neu_count = 0
+        self.pos_service_at_other_banks = {}
+        self.neg_service_at_other_banks = {}
+        self.neu_service_at_other_banks = {}
+        self.other_banks_total = {}
+        self.curr_bank_list = []
 
-# class ServiceModel:
-#     def __init__(self, name: str, positive: int, negative: int, neutral: int):
-#         self.name = name
-#         self.positive = positive
-#         self.negative = negative
-#         self.neutral = neutral
-#
-#     def to_dict(self):
-#         return {
-#             'name': self.name,
-#             'positive': self.positive,
-#             'negative': self.negative,
-#             'neutral': self.neutral
-#         }
-#
-#     @classmethod
-#     def from_dict(cls, data):
-#         return cls(data['name'], data['positive'], data['negative'], data['neutral'])
-#
-#     def __str__(self):
-#         return f"Name: {self.name}"
+        self.positive_word_list = []
+        self.negative_word_list = []
+
+    def to_dict(self):
+        return {
+            "bank_name": self.bank_name,
+            "total_reviews": self.total_reviews,
+            "avg_rating": self.avg_rating,
+            "searched_st_service": self.searched_st_service,
+            "searched_query": self.searched_query,
+            "positive_reviews": self.positive_reviews,
+            "negative_reviews": self.negative_reviews,
+            "common_services": [service.to_dict() for service in self.common_services],  # Serialize ServiceModel
+            "pos_count": self.pos_count,
+            "neg_count": self.neg_count,
+            "neu_count": self.neu_count,
+            "pos_service_at_other_banks": self.pos_service_at_other_banks,
+            "neg_service_at_other_banks": self.neg_service_at_other_banks,
+            "neu_service_at_other_banks": self.neu_service_at_other_banks,
+            "other_banks_total": self.other_banks_total,
+            "curr_bank_list": self.curr_bank_list,
+            "positive_word_list": self.positive_word_list,
+            "negative_word_list": self.negative_word_list
+        }

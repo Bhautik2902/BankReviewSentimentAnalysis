@@ -1,9 +1,11 @@
 pandas~=2.2.2
-matplotlib
+matplotlib~=3.9.2
 googletrans
-transformers
+transformers~=4.46.2
 numpy
 sentencepiece
 django~=5.1.2
 django-environ
 google-cloud-storage
+wordcloud~=1.9.3
+environ~=1.0
