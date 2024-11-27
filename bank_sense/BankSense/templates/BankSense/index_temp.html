@@ -107,6 +107,14 @@
   #loading-spinner {
     background-color: rgba(255, 255, 255, 0.8);
 }
+    .separator {
+    width: 1px;
+    height: 24px;
+    background-color: #333;
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 8px; /* Adds spacing around the separator */
+}
     </style>
 </head>
 <body>
@@ -138,7 +146,7 @@
                 </div>
 
                 <div class="input-group me-1">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#browseServicesModal">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#browseServicesModal" disabled>
                         Browse bank services
                     </button>
                 </div>
@@ -150,7 +158,7 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-start align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <div style="margin-right: 2rem">
-                    <h1 class="h2">Overall Sentiment</h1>
+                    <h1 class="h2" id="top_heading" >Overall Sentiment</h1>
                     <p class="text-muted">Total Reviews: <span id="totalReviews">{{ totalReviews }}</span></p>
                 </div>
             </div>
@@ -249,6 +257,8 @@ const neutralPercentage = ((totalNeutralCount / totalReviews) * 100).toFixed(2);
 const negativePercentage = ((totalNegativeCount / totalReviews) * 100).toFixed(2);
 var sentimentScore = ((positivePercentage * 10) + (neutralPercentage * 5) + (negativePercentage * 1)) / 100;
 sentimentScore = sentimentScore.toFixed(1)
+let labelsWithSpaces = labels.join(', ');
+document.getElementById('top_heading').innerHTML="Overall Analysis"+ "<span class='separator'></span>"+ labelsWithSpaces
 document.getElementById('sentiment_score').innerText = sentimentScore;
 document.getElementById('totalReviews').innerText = totalReviews;
 document.getElementById('totalReviews2').innerText = totalReviews;

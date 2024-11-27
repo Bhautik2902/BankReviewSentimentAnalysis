@@ -453,12 +453,19 @@
    };
 
   const handleChipClick = async (event) => {
+
   const chipContainer = document.getElementById('chipContainer');
   const existingSpinner = document.querySelector('.loading-spinner');
   if (existingSpinner)
    {
      existingSpinner.remove(); // Remove any existing spinner
    }
+
+  const chip = event.target.closest('.chip');
+  if (!chip) return; // Exit if the click is outside the chip
+  const link = chip.querySelector('a');
+  if (!link) return; // Exit if no link is found
+
   const spinner = document.createElement('div');
   spinner.className = 'loading-spinner';
   spinner.innerHTML = '<div class="spinner"></div>'; // This will hold the spinner
@@ -469,8 +476,8 @@
   spinner.style.zIndex = '9999'; // Ensure it is above the chip's content
   chipContainer.style.position = 'relative';
   chipContainer.appendChild(spinner);
-  const chip = event.target.closest('.chip');
-  const link = chip.querySelector('a');
+
+  {#const link = chip.querySelector('a');#}
   const url = link.href;
 
   try
@@ -518,9 +525,10 @@ item.addEventListener('click', handleBankClick);
 
 logo = document.getElementById('logo')
 logo.addEventListener('click',handleLogoClick)
-  window.addEventListener('popstate', () => {
+window.addEventListener('popstate', () => {
     removeSpinner();
   });
+
 // Initialize the sentiment bar chart
 var sentimentChart = new Chart(document.getElementById('sentimentChart').getContext('2d'), {
       type: 'bar',
@@ -719,7 +727,10 @@ var sentimentChart = new Chart(document.getElementById('sentimentChart').getCont
 
             // Append the anchor to the chip div
             chip.appendChild(link);
-            chip.addEventListener('click', handleChipClick);
+            chip.addEventListener('click', (event) => {
+        event.preventDefault(); // Prevent default behavior of <a> tag
+        window.location.href = link.href; // Navigate to the link's href
+    });
             // Append the chip to the container
             chipContainer.appendChild(chip);
         });
