@@ -19,6 +19,7 @@ def get_max(dictionary):
 
     return maximum
 
+
 @register.filter
 def nearest_greater_multiple_of_10(number):
     if number % 10 == 0:

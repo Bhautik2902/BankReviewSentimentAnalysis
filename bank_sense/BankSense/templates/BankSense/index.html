@@ -14,7 +14,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'BankSense/style.css' %}">
     <style>
-        /* Custom adjustments */
+         /* Custom adjustments */
         .sidebar {
             height: 100vh;
             background-color: #f8f9fa;
@@ -75,9 +75,9 @@
             display: inline-block;
             padding: 0.5rem 1rem;
             font-size: 1rem;
-            color: #1565C0; /* Text color */
-            background-color: #E3F2FD; /* Light blue background */
-            border-radius: 20px; /* Rounded corners */
+            color: #1565C0;
+            background-color: #E3F2FD;
+            border-radius: 20px;
             border: 1px solid transparent;
             text-align: center;
             cursor: pointer;
@@ -98,11 +98,12 @@
         .custom-modal-width {
             max-width: 60%; /* Change this value to adjust the width */
         }
+
         .chip-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
         }
         .chip {
             padding: 8px 12px;
@@ -116,11 +117,14 @@
             cursor: pointer;
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
-        .chip:hover {
-            background-color: #BBDEFB;
-            border-color: #90CAF9;
-        }
 
+        .chip:hover > a {
+            text-decoration: underline;
+            font-weight: bold;
+            background-color: #BBDEFB;
+            font-size: 1.2rem; /* Increase font size */
+            transition: all 0.3s ease; /* Add smooth transition */
+        }
         .header-content {
             display: flex;
             align-items: center;
@@ -137,28 +141,31 @@
             height: 24px;
             background-color: #333;
         }
-  .spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 2s linear infinite;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: block; /* Temporarily show the spinner */
-    background-color: rgba(255, 255, 255, 0.8); /* Add background for testing */
-}
-  #loading-spinner {
-    background-color: rgba(255, 255, 255, 0.8);
-}
 
-.spinner-border {
-    width: 3rem;
-    height: 3rem;
-}
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: block; /* Temporarily show the spinner */
+            background-color: rgba(255, 255, 255, 0.8); /* Add background for testing */
+        }
+        #loading-spinner {
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+
 /* Spin animation */
 @keyframes spin
    {
@@ -336,7 +343,7 @@
                 </div>
                 <div class="modal-body">
                     <input type="text" class="form-control mb-3" id="searchInput" placeholder="Search for label">
-                    <div id="chipContainer">
+                    <div id="chipsContainer">
                         <!-- chips will be added dynamically -->
                     </div>
                 </div>
@@ -603,6 +610,11 @@ var sentimentChart = new Chart(document.getElementById('sentimentChart').getCont
         {# when bank name with specific service has been selected #}
         {% if visuali_data.searched_st_service %}
             const ctx = document.getElementById('ratingDonutChart').getContext('2d');
+            const neg_max = {{ visuali_data.neg_service_at_other_banks|get_max }}
+            const pos_max = {{ visuali_data.pos_service_at_other_banks|get_max }}
+            const neu_max = {{ visuali_data.neu_service_at_other_banks|get_max }}
+            const max_of_all =  nearestGreaterMultipleOf10(Math.max(neg_max, pos_max, neu_max));
+
             const myChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -655,7 +667,7 @@ var sentimentChart = new Chart(document.getElementById('sentimentChart').getCont
                 scales: {
                     x: {
                         beginAtZero: true,
-                        max: {{ visuali_data.neg_service_at_other_banks|get_max|nearest_greater_multiple_of_10|add:20 }}, {# find max value and add some margin #}
+                        max: max_of_all + 20, {# find max value and add some margin #}
                         title: {
                             display: true,
                             text: 'Number of Positive Reviews',
@@ -720,20 +732,40 @@ var sentimentChart = new Chart(document.getElementById('sentimentChart').getCont
             // Create the anchor tag
             const link = document.createElement('a');
             link.href = `?service=${encodeURIComponent(service.replace(/\s+/g, '-'))}&bank={{ visuali_data.bank_name }}`;
-
             link.textContent = service;
             link.style.textDecoration = 'none';
             link.style.color = 'inherit';
 
             // Append the anchor to the chip div
             chip.appendChild(link);
+
+            // Event listener to handle hover (mouseenter and mouseleave)
+            chip.addEventListener('mouseenter', () => {
+                if (!chip.querySelector('.extra-info')) {
+                    const extraInfo = document.createElement('div');
+                    extraInfo.className = 'extra-info';
+                    extraInfo.textContent = getRelatedServices(service);
+                    chip.appendChild(extraInfo);
+                }
+            });
+
+            chip.addEventListener('mouseleave', () => {
+                const extraInfo = chip.querySelector('.extra-info');
+                if (extraInfo) {
+                    extraInfo.remove();
+                }
+            });
+
+            // Event listener to handle click
             chip.addEventListener('click', (event) => {
-        event.preventDefault(); // Prevent default behavior of <a> tag
-        window.location.href = link.href; // Navigate to the link's href
-    });
-            // Append the chip to the container
-            chipContainer.appendChild(chip);
+                event.preventDefault();
+                window.location.href = link.href;
+            });
+
+            // Append the chip to the parent container
+            document.querySelector('#chipsContainer').appendChild(chip);
         });
+
 
         // Filter chips based on search input
         const searchInput = document.getElementById('searchInput');
@@ -749,6 +781,36 @@ var sentimentChart = new Chart(document.getElementById('sentimentChart').getCont
             });
         });
     });
+     function nearestGreaterMultipleOf10(number) {
+        if (number % 10 === 0) {
+            return number;
+        }
+        return Math.floor(number / 10 + 1) * 10;
+    }
+
+    function getRelatedServices(service) {
+         const ambiguousToUnambiguousMap = {
+            "Loan": ["Personal Loan", "Car Loan", "Home Loan", "Education Loan"],
+            "Points": ["Loyalty Points", "Credit Card Points", "Reward Points"],
+            "Insurance": ["Health Insurance", "Life Insurance", "Auto Insurance", "Property Insurance"],
+            "Rewards": ["Cashback Rewards", "Loyalty Rewards", "Referral Rewards"],
+            "Credit": ["Credit Card", "Credit Score", "Credit Line"],
+            "Fee": ["Annual Fee", "Account Fee", "Transaction Fee", "Penalty Fee"],
+            "Rates": ["Interest Rates", "Loan Rates", "Exchange Rates"],
+            "Yield": ["Investment Yield", "Savings Yield", "Dividend Yield"],
+            "Features": ["App Features", "Service Features"],
+            "Performance": ["App Performance", "Customer Service Performance"],
+            "Security": ["Digital Security", "Financial Security"],
+            "Quick Access": ["Quick App Login", "Quick Balance Access"],
+            "Online banking": ["Mobile banking", "Mobile deposit"]
+         };
+
+          if (ambiguousToUnambiguousMap.hasOwnProperty(service)) {
+                return ambiguousToUnambiguousMap[service].join(", ");
+          } else {
+                return "";
+          }
+    }
 </script>
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

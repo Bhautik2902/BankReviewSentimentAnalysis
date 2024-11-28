@@ -75,9 +75,6 @@ def generate_no_data_image():
         return None
 
 
-# Initialize the summarizer pipeline
-# summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
-
 # View to list all reviews
 def dashboard_view(request):
     service_name = request.GET.get('service', None)
@@ -178,7 +175,6 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
         service_name = ' '.join(word.replace('-', ' ') for word in service_name.split())
         common_st_services = [service_name]
         visualidata.searched_st_service = service_name
-        print("This has been searched", visualidata.searched_st_service)
         # common_st_services.pop() # remove last one.
 
     # assigning top 5 services and 1 selected service (if selected)
@@ -268,7 +264,6 @@ def create_json(request):
     # services = ["Credit", "Debit card", "Fee", "Rates", "Mortgage", "Online banking", "Customer Service", "Interest Rates", "Insurance", "Points", "Loan", "Interac", "Mobile banking", "Annual Fee", "Performance", "Security", "No Fee", "Rewards", "Yield", "Features", "Quick Access", "Mobile Deposit", "App Crash"]
     # services = ["Credit", "Debit card", "Fee", "Rates", "Mortgage", "Online banking"]
     services = ["something"]
-    print("total services:", len(services))
     try:
         df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
         json_objects = []
@@ -378,7 +373,6 @@ def generate_word_cloud(text, sentiment):
         ).generate("No_Data_Found")
     else:
         # Initialize progress bar for word processing
-        print("Processing words for sentiment analysis:")
         for word in tqdm(words, desc="Analyzing", unit="word"):
             if word not in stop_words and len(word) > 2:
                 # Analyze sentiment of each word using RoBERTa
@@ -431,7 +425,6 @@ def generate_word_cloud_keyword_list(text, sentiment):
     words = re.findall(r'\b\w+\b', text.lower())
     sentiment_words = []
     # Initialize progress bar for word processing
-    print("Processing words for sentiment analysis:")
     for word in words:
         if word not in stop_words and len(word) > 2:
             inputs = tokenizer(word, return_tensors="pt")
@@ -668,7 +661,6 @@ def fetch_data_by_bank_and_service(json_data, bank_name, service_name):
         for entry in json_data:
             # Check if the dictionary contains the matching bank_name and service_name
             if entry.get("bank_name") == bank_name and entry.get("searched_st_service") == service_name:
-                print(entry)
                 return entry
 
     else:
