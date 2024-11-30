@@ -79,6 +79,11 @@ def generate_no_data_image():
 def dashboard_view(request):
     service_name = request.GET.get('service', None)
     bank_name = request.GET.get('bank', 'CIBC')
+
+    common_banks = ['RBC', 'Scotiabank', 'CIBC', 'NBC', 'TD', 'BMO']
+    if bank_name not in common_banks:
+        return render(request, 'BankSense/error_page.html', {})
+
     try:
         json_data = read_json_from_gcs("text-mining-labeled-data", "json_database.json")
         service_list = read_services_from_gcs("text-mining-labeled-data", "filtered_keywords.csv")
@@ -90,16 +95,15 @@ def dashboard_view(request):
             negative_wordcloud = create_word_cloud_image(visuali_data.negative_word_list, 'negative')
 
         else:
+            # if service_name not in service_list:
+            #     return render(request, 'BankSense/index.html', {
+            #         'visuali_data': VisualiData(),
+            #         'service_list': service_list,
+            #         'positive_wordcloud': generate_no_data_image(),
+            #         'negative_wordcloud': generate_no_data_image()
+            #     })
 
-            if service_name not in service_list:
-                return render(request, 'BankSense/index.html', {
-                    'visuali_data': VisualiData(),
-                    'service_list': service_list,
-                    'positive_wordcloud': generate_no_data_image(),
-                    'negative_wordcloud': generate_no_data_image()
-                })
-
-                # if precomputed data is unavailable utilize text-miniing-labeled-data raw file
+            # if precomputed data is unavailable utilize text-miniing-labeled-data raw file
             df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
             visuali_data = analyze_service_sentiment(df, bank_name, service_name)
 
@@ -111,14 +115,17 @@ def dashboard_view(request):
             positive_wordcloud = generate_word_cloud(positive_text, sentiment='positive')
             negative_wordcloud = generate_word_cloud(negative_text, sentiment='negative')
 
-            #To do: include the code to append  the resultant data to json_database
+        specific_service_count = visuali_data.common_services[0].pos_count + visuali_data.common_services[0].neg_count + visuali_data.common_services[0].neu_count
+        if specific_service_count > 0:
 
-        return render(request, 'BankSense/index.html', {
-            'visuali_data': visuali_data,
-            'service_list': service_list,
-            'positive_wordcloud': positive_wordcloud,
-            'negative_wordcloud': negative_wordcloud
-        })
+            return render(request, 'BankSense/index.html', {
+                'visuali_data': visuali_data,
+                'service_list': service_list,
+                'positive_wordcloud': positive_wordcloud,
+                'negative_wordcloud': negative_wordcloud
+            })
+        else:
+            return render(request, 'BankSense/error_page.html', {})
 
     except Exception as e:
         print(str(e))
@@ -251,39 +258,8 @@ def analyze_service_sentiment(df, bank_name, service_name=None):
                 except Exception as e:
                     print(e)
 
-
-        for bank in common_banks:
-            visualidata.other_banks_total[bank] = visualidata.pos_service_at_other_banks[bank] + visualidata.neg_service_at_other_banks[bank] + visualidata.neu_service_at_other_banks[bank]
-            print(bank, "-", visualidata.other_banks_total[bank])
-
     return visualidata
 
-
-def create_json(request):
-    common_banks = ['RBC', 'Scotiabank', 'CIBC', 'NBC', 'TD', 'BMO']
-    # services = ["Credit", "Debit card", "Fee", "Rates", "Mortgage", "Online banking", "Customer Service", "Interest Rates", "Insurance", "Points", "Loan", "Interac", "Mobile banking", "Annual Fee", "Performance", "Security", "No Fee", "Rewards", "Yield", "Features", "Quick Access", "Mobile Deposit", "App Crash"]
-    # services = ["Credit", "Debit card", "Fee", "Rates", "Mortgage", "Online banking"]
-    services = ["something"]
-    try:
-        df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
-        json_objects = []
-
-        for bank in common_banks:
-            for service in services:
-                visuali_data = analyze_service_sentiment(df, bank,  None)
-                positive_text = " ".join(visuali_data.positive_reviews)
-                negative_text = " ".join(visuali_data.negative_reviews)
-
-                visuali_data.positive_word_list = generate_word_cloud_keyword_list(positive_text, sentiment='positive')
-                visuali_data.negative_word_list = generate_word_cloud_keyword_list(negative_text, sentiment='negative')
-
-                json_objects.append(visuali_data)
-                print(bank, "-", service)
-
-        save_models_to_json_file(json_objects, "json_database.json")
-
-    except Exception as e:
-        print(e)
 
 
 ############################################  utility functions  #######################################################
@@ -679,3 +655,31 @@ def fetch_data_by_bank_and_service(json_data, bank_name, service_name):
                 return entry
 
     return None
+
+
+def create_json(request):
+    common_banks = ['RBC', 'Scotiabank', 'CIBC', 'NBC', 'TD', 'BMO']
+    # services = ["Credit", "Debit card", "Fee", "Rates", "Mortgage", "Online banking", "Customer Service", "Interest Rates", "Insurance", "Points", "Loan", "Interac", "Mobile banking", "Annual Fee", "Performance", "Security", "No Fee", "Rewards", "Yield", "Features", "Quick Access", "Mobile Deposit", "App Crash"]
+    # services = ["Credit", "Debit card", "Fee", "Rates", "Mortgage", "Online banking"]
+    services = ["something"]
+    try:
+        df = read_csv_from_gcs("text-mining-labeled-data", "final_labeled_reviews")
+        json_objects = []
+
+        for bank in common_banks:
+            for service in services:
+                visuali_data = analyze_service_sentiment(df, bank,  None)
+                positive_text = " ".join(visuali_data.positive_reviews)
+                negative_text = " ".join(visuali_data.negative_reviews)
+
+                visuali_data.positive_word_list = generate_word_cloud_keyword_list(positive_text, sentiment='positive')
+                visuali_data.negative_word_list = generate_word_cloud_keyword_list(negative_text, sentiment='negative')
+
+                json_objects.append(visuali_data)
+                print(bank, "-", service)
+
+        save_models_to_json_file(json_objects, "json_database.json")
+
+    except Exception as e:
+        print(e)
+
