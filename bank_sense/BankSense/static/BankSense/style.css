@@ -1,19 +1,59 @@
+/*.sidebar {*/
+/*    height: 100vh;*/
+/*    background-color: #f8f9fa;*/
+/*    border-right: 1px solid #dee2e6;*/
+/*    padding-top: 20px;*/
+/*}*/
+
+/*!* Sidebar *!*/
+
+/*.sidebar .nav-link {*/
+/*    font-size: 1.1rem;*/
+/*    padding: 15px;*/
+/*}*/
+
+/*.main-content {*/
+/*    margin-left: 220px;*/
+/*    padding: 20px;*/
+/*}*/
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+/* Sidebar */
 .sidebar {
-    height: 100vh;
+    height: 100vh; /* Full height */
     background-color: #f8f9fa;
     border-right: 1px solid #dee2e6;
     padding-top: 20px;
+    position: fixed; /* Fix sidebar to the left of the page */
+    top: 0;
+    left: 0;
+    width: 220px; /* Set sidebar width */
+    box-sizing: border-box;
+    padding-left: 20px;
 }
 
-.sidebar .nav-link {
-    font-size: 1.1rem;
-    padding: 15px;
-}
-
+/* Main content */
 .main-content {
-    margin-left: 220px;
+    margin-left: 220px; /* Add space on the left side for the sidebar */
     padding: 20px;
 }
+
+/* Responsive design for mobile devices */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px; /* Reduce sidebar width on smaller screens */
+    }
+
+    .main-content {
+        margin-left: 0; /* Remove the margin on mobile */
+    }
+}
+
+
+
 
 .avatar {
     width: 40px;
@@ -176,6 +216,36 @@
 .text-center {
     text-align: center;
 }
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 2s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: block; /* Temporarily show the spinner */
+    background-color: rgba(255, 255, 255, 0.8); /* Add background for testing */
+}
+  #loading-spinner {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+/* Spin animation */
+@keyframes spin
+   {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+   }
+
 
 
 /*-----------------------------------------------------------*/
