@@ -18,6 +18,13 @@ This project is a Natural Language Processing (NLP) and Text Mining platform des
 - **Backend**: Python
 - **Frontend**: HTML, CSS, JavaScript, Bootstrap
 
+## Screenshot
+![Screenshot of the application](screenshots/banksense_ss1.png "App Screenshot")
+![Screenshot of the application](screenshots/banksense_ss2.png "App Screenshot")
+![Screenshot of the application](screenshots/banksense_ss3.png "App Screenshot")
+![Screenshot of the application](screenshots/banksense_ss4.png "App Screenshot")
+
+
 ## Installation
 
 ### Prerequisites
